@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod
 import ipaddress
 
 class Communication(ABC):
+    
     def __init__(self, senderIP: ipaddress, receiverIP: ipaddress):
         if senderIP is None or receiverIP is None:
             raise TypeError
@@ -20,6 +21,7 @@ class Communication(ABC):
 
 
 class AMQP091Communication(Communication):
+    
     def __init__(self, senderIP: ipaddress, receiverIP: ipaddress, classID: int, methodID: int):
         super.__init__(senderIP, receiverIP)
         self.classID = classID
@@ -33,6 +35,7 @@ class AMQP091Communication(Communication):
 
 
 class AMQP1Communication(Communication):
+    
     def __init__(self, senderIP: ipaddress, receiverIP: ipaddress, hashBareMessage: str):
         super.__init__(senderIP, receiverIP)
         self.hashBareMessage = hashBareMessage
@@ -42,6 +45,7 @@ class AMQP1Communication(Communication):
 
 
 class MQTTCommunication(Communication):
+    
     def __init__(self, senderIP: ipaddress, receiverIP: ipaddress, controlPacketType: int):
         super.__init__(senderIP, receiverIP)
         self.controlPacketType = controlPacketType
@@ -51,6 +55,7 @@ class MQTTCommunication(Communication):
 
 
 class STOMPCommunication(Communication):
+    
     def __init__(self, senderIP: ipaddress, receiverIP: ipaddress, command: str):
         super.__init__(senderIP, receiverIP)
         self.command = command
@@ -60,6 +65,7 @@ class STOMPCommunication(Communication):
 
 
 class HTTPCommunication(Communication):
+    
     def __init__(self, senderIP: ipaddress, receiverIP: ipaddress, headers: dict):
         super.__init__(senderIP, receiverIP)
         self.headers = headers
@@ -69,6 +75,7 @@ class HTTPCommunication(Communication):
 
 
 class TCPCommunication(Communication):
+    
     def __init__(self, senderIP: ipaddress, receiverIP: ipaddress, SYN: Optional[bool] = False):
         super.__init__(senderIP, receiverIP)
         self.SYN = SYN
