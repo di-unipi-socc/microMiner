@@ -31,7 +31,7 @@ class K8SParserContext:
                 content = loader.load(yaml)
                 try:
                     apiVersion = content['apiVersion'].split('/').pop()
-                    nodesInfo.append(versions['yml', apiVersion](content))
+                    nodesInfo.append(versions['yml', apiVersion](content, yaml))
                 except:
                     raise UnsupportedTypeError('Unsupported file')
         else:
