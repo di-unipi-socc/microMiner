@@ -1,7 +1,6 @@
+import hashlib
 from .k8sparser import K8sParser
 from ...errors import WrongFormatError
-
-#TO-DO: Rivedere la gestione dei nomi associati ai pods in accordo al dns di K8S
 
 class Ymlv1Parser(K8sParser):
 
@@ -9,7 +8,7 @@ class Ymlv1Parser(K8sParser):
         pass
     
     @staticmethod
-    def parse(content: dict) -> dict:
+    def parse(contentDict: dict, contentStr: str) -> dict:
         workloads = ['Deployment', 'ReplicaSet', 'DaemonSet', 'ReplicationController', 'StatefulSet', 'Pod']
         try:
             if content['kind'] in workloads:
@@ -18,11 +17,11 @@ class Ymlv1Parser(K8sParser):
                 if content['kind'] == 'Pod':
                     metadata = content['metadata']
                     podSpec = content['spec']
-                    containers = _parsePod(metadata, podSpec)
+                    containers = _parsePod(contentStr, podSpec)
                 elif 'template' in content['spec']:
                     metadata = content['spec']['template']['metadata']
                     podSpec = content['spec']['template']['spec']
-                    containers = _parsePod(metadata, podSpec)
+                    containers = _parsePod(contentStr, podSpec)
                 if 'labels' in metadata:
                     labels = metadata['labels']
                 return {'Type': 'workload', 'Info': {'Labels': labels, 'Containers': containers}}
@@ -35,26 +34,24 @@ class Ymlv1Parser(K8sParser):
         except:
             raise WrongFormatError('')
 
-    def _parsePod(self, metadata: dict, spec: dict) -> []:
+    def _parsePod(self, contentStr: str, spec: dict) -> []:
         containers = []
-        namespace = 'default'
-        podName = ''
-        if 'namespace' in metadata:
-            namespace = metadata['namespace']
-        if 'name' in metadata:
-            podName = metadata['name']
+        hostname = ''
+        if 'hostname' in spec:
+            hostname = spec['hostname']
         else:
-            podName = metadata['generateName']
+            hostname = hashlib.sha256(contentStr).hexdigest()
         for container in spec['containers']:
             ports = []
+            name = hostname
             for containerPort in container['ports']:
                 port = containerPort['containerPort']
                 if 'name' in containerPort:
                     portName = containerPort['name']
                 else:
                     portName = ''
+                name = name + '.' + str(port)
                 ports.append({'name': portName, 'number': port})
-            name = namespace + '.' + podName + '.' + container['name']
             containers.append({'name': name, 'ports': ports})
         return containers
 
@@ -65,11 +62,12 @@ class Ymlv1Parser(K8sParser):
         svcPorts = []
         if 'namespace' in metadata:
             namespace = metadata['namespace']
-        if 'name' in metadata:
-            name = metadata['name']
-        else:
-            name = metadata['generateName']
-        svcInfo['name'] = namespace + '.' + name
+        #if 'name' in metadata:
+        name = metadata['name']
+        #Suppose for now that is impossibile for services to use generateName . (Instead how it resolve the clusterIP?)
+        #else:
+        #    name = metadata['generateName']
+        svcInfo['name'] = name + '.' + namespace + '.svc.cluster.local' #TO-DO:Manage other zone
         if 'selector' in spec:
             svcInfo['selector'] = spec['selector']
         else:
@@ -92,6 +90,7 @@ class Ymlv1Parser(K8sParser):
             svcInfo['type'] = 'ClusterIP'
         return svcInfo
 
+    #How a service without selector is bounded with Endpoints?
     def _parseEndpoint(self, metadata: dict, spec: dict) -> []:
         namespace = 'default'
         name = ''
