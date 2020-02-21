@@ -6,9 +6,9 @@ from pathlib import Path
 from ruamel.yaml import YAML
 from typing import Optional
 from typing import Callable
-from .ymlv1Parser import YmlV1Parser
-from .ymlv1beta1Parser import YmlV1beta1Parser
-from .ymlv1beta2Parser import YmlV1beta2Parser
+from .v1Parser import V1Parser
+from .v1beta1Parser import V1beta1Parser
+from .v1beta2Parser import V1beta2Parser
 from ...errors import UnsupportedTypeError
 
 class K8SParserContext:
