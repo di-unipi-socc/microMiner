@@ -2,7 +2,7 @@ import hashlib
 from .k8sparser import K8sParser
 from ...errors import WrongFormatError
 
-class Ymlv1Parser(K8sParser):
+class YmlV1Parser(K8sParser):
 
     def __init__(self):
         pass
@@ -29,7 +29,7 @@ class Ymlv1Parser(K8sParser):
                 svcParsedInfo = _parseService(content['metadata'], content['spec'])
                 return {'Type': 'service', 'Info': svcParsedInfo}
             elif content['kind'] == 'Endpoints':
-                endpointsInfo = _parseEndpoint(content['metadata'], content['spec'])
+                endpointsInfo = _parseEndpoints(content['metadata'], content['spec'])
                 return {'Type': 'endpoints', 'Info': endpointsInfo}
         except:
             raise WrongFormatError('')
@@ -90,21 +90,17 @@ class Ymlv1Parser(K8sParser):
             svcInfo['type'] = 'ClusterIP'
         return svcInfo
 
-    #How a service without selector is bounded with Endpoints?
-    def _parseEndpoint(self, metadata: dict, spec: dict) -> []:
-        namespace = 'default'
-        name = ''
+    #How a service without selector is bounded with Endpoints? (With ports?)
+    def _parseEndpoints(self, metadata: dict, spec: dict) -> []:
         endpoints = []
-        if 'namespace' in metadata:
-            namespace = metadata['namespace']
-        if 'name' in metadata:
-            name = metadata['name']
-        else:
-            name = metadata['generateName']
         for subset in spec['subsets']:
             for address in subset['addresses']:
                 ports = []
                 for port in subset['ports']:
-                    ports.append(port)
-                endpoints.append({'name': namespace + '.' + name + '.' + address['hostname'], 'hostname': address['hostname'], 'ip': address['ip'], 'ports': ports})
+                    if 'name' in port:
+                        portName = port['name']
+                    else:
+                        portName = ''
+                    ports.append({'name': portName, 'number': port['port']})
+                endpoints.append({'name': address['hostname'], 'ip': address['ip'], 'ports': ports})
         return endpoints
