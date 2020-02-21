@@ -6,7 +6,7 @@ class V1Parser(K8sParser):
 
     def __init__(self):
         pass
-    
+
     @staticmethod
     def parse(contentDict: dict, contentStr: str) -> dict:
         workloads = ['Deployment', 'ReplicaSet', 'DaemonSet', 'ReplicationController', 'StatefulSet', 'Pod']
@@ -67,7 +67,7 @@ class V1Parser(K8sParser):
         #Suppose for now that is impossibile for services to use generateName . (Instead how it resolve the clusterIP?)
         #else:
         #    name = metadata['generateName']
-        svcInfo['name'] = name + '.' + namespace + '.svc.cluster.local' #TO-DO:Manage other zone
+        svcInfo['name'] = name + '.' + namespace + '.svc'
         if 'selector' in spec:
             svcInfo['selector'] = spec['selector']
         else:
