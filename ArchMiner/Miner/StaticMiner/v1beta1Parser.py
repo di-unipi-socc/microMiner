@@ -1,6 +1,6 @@
 from .k8sParser import K8sParser
 
-class YmlV1beta1Parser(K8sParser):
+class V1beta1Parser(K8sParser):
 
     def __init__(self):
         pass

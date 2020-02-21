@@ -2,7 +2,7 @@ import hashlib
 from .k8sparser import K8sParser
 from ...errors import WrongFormatError
 
-class YmlV1Parser(K8sParser):
+class V1Parser(K8sParser):
 
     def __init__(self):
         pass
