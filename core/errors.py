@@ -16,3 +16,11 @@ class UnsupportedTypeError(K8sParserError):
 class WrongFormatError(K8sParserError):
     def __init__(self, message):
         self.message = message
+
+class StaticMinerError(ArchMinerError):
+    def __init__(self, message):
+        self.message = message
+
+class WrongFolderError(StaticMinerError):
+    def __init__(self, message):
+        self.message = message
