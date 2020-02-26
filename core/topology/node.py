@@ -10,25 +10,18 @@ class Direction(Enum):
 
 class Node:
 
-    def __init__(self, name: str, ports: List[int]):
+    def __init__(self, name: str, info: Optional(dict) = {}):
         if name is None:
             raise TypeError
 
-        for port in ports:
-            if (port < 0) or (port > 65535):
-                raise ValueError
-
         self.name = name
-        self.ports = ports
+        self.info = info
         self.type = NodeType.MICROTOSCA_NODES_SERVICE
         self.incomingEdges = {}
         self.outgoingEdges = {}
         
     def getName(self) -> str:
         return self.name
-
-    def getPorts(self) -> List[int]:
-        return self.ports
 
     def getNodeType(self) -> NodeType:
         return self.type
