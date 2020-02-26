@@ -9,51 +9,49 @@ class V1Parser(K8sParser):
 
     @staticmethod
     def parse(contentDict: dict, contentStr: str) -> dict:
-        workloads = ['Deployment', 'ReplicaSet', 'DaemonSet', 'ReplicationController', 'StatefulSet', 'Pod']
+        workloads = ['Deployment', 'ReplicaSet', 'DaemonSet', 'ReplicationController', 'StatefulSet', 'Job', 'Pod']
+        info = {}
         try:
             if content['kind'] in workloads:
-                metadata, podSpec, labels = {}, {}, {}
-                containers = []
+                podInfo = {}
                 if content['kind'] == 'Pod':
-                    metadata = content['metadata']
-                    podSpec = content['spec']
-                    containers = _parsePod(contentStr, podSpec)
+                    podInfo = _parsePod(contentStr, content['metadata'], content['spec'])
                 elif 'template' in content['spec']:
-                    metadata = content['spec']['template']['metadata']
-                    podSpec = content['spec']['template']['spec']
-                    containers = _parsePod(contentStr, podSpec)
-                if 'labels' in metadata:
-                    labels = metadata['labels']
-                return {'Type': 'workload', 'Info': {'Labels': labels, 'Containers': containers}}
+                    podInfo = _parsePod(contentStr, content['spec']['template']['metadata'], content['spec']['template']['spec'])
+                if podInfo:
+                    info = {'Type': 'pod', 'Info': podInfo}
             elif content['kind'] == 'Service':
                 svcParsedInfo = _parseService(content['metadata'], content['spec'])
-                return {'Type': 'service', 'Info': svcParsedInfo}
+                info = {'Type': 'service', 'Info': svcParsedInfo}
             elif content['kind'] == 'Endpoints':
                 endpointsInfo = _parseEndpoints(content['metadata'], content['spec'])
-                return {'Type': 'endpoints', 'Info': endpointsInfo}
+                info = {'Type': 'endpoints', 'Info': endpointsInfo}
         except:
             raise WrongFormatError('')
+        return info
 
-    def _parsePod(self, contentStr: str, spec: dict) -> []:
-        containers = []
-        hostname = ''
-        if 'hostname' in spec:
-            hostname = spec['hostname']
+    def _parsePod(self, contentStr: str, metadata: dict, spec: dict) -> {}:
+        if len(spec['containers']) != 1:
+            raise WrongFormatError('')
+        podInfo = {}
+        ports = []
+        if 'labels' in metadata:
+            podInfo['labels'] = metadata['labels']
         else:
-            hostname = hashlib.sha256(contentStr).hexdigest()
-        for container in spec['containers']:
-            ports = []
-            name = hostname
-            for containerPort in container['ports']:
-                port = containerPort['containerPort']
-                if 'name' in containerPort:
-                    portName = containerPort['name']
-                else:
-                    portName = ''
-                name = name + '.' + str(port)
-                ports.append({'name': portName, 'number': port})
-            containers.append({'name': name, 'ports': ports})
-        return containers
+            podInfo['labels'] = {}
+        if 'hostname' in spec:
+            podInfo['hostname'] = spec['hostname']
+        else:
+            podInfo['hostname'] = hashlib.sha256(contentStr).hexdigest()
+        podInfo['image'] = spec['containers'][0]['image']
+        for port in spec['containers'][0]['ports']:
+            if 'name' in port:
+                portName = port['name']
+            else:
+                portName = ''
+            ports.append({'name': portName, 'number': port['containerPort']})
+        podInfo['ports'] = ports
+        return podInfo
 
     def _parseService(self, metadata: dict, spec: dict) -> {}:
         namespace = 'default'
@@ -62,11 +60,8 @@ class V1Parser(K8sParser):
         svcPorts = []
         if 'namespace' in metadata:
             namespace = metadata['namespace']
-        #if 'name' in metadata:
+        #Suppose for now that is impossibile for services to use generateName
         name = metadata['name']
-        #Suppose for now that is impossibile for services to use generateName . (Instead how it resolve the clusterIP?)
-        #else:
-        #    name = metadata['generateName']
         svcInfo['name'] = name + '.' + namespace + '.svc'
         if 'selector' in spec:
             svcInfo['selector'] = spec['selector']
@@ -81,7 +76,10 @@ class V1Parser(K8sParser):
             if 'nodePort' in svcPort:
                 portInfo['nodePort'] = svcPort['nodePort']
             portInfo['port'] = svcPort['port']
-            portInfo['targetPort'] = svcPort['targetPort']
+            if 'targetPort' in svcPort:
+                portInfo['targetPort'] = svcPort['targetPort']
+            else:
+                portInfo['targetPort'] = portInfo['port']
             svcPorts.append(portInfo)
         svcInfo['ports'] = svcPorts
         if 'type' in spec:
@@ -90,7 +88,6 @@ class V1Parser(K8sParser):
             svcInfo['type'] = 'ClusterIP'
         return svcInfo
 
-    #How a service without selector is bounded with Endpoints? (With ports?)
     def _parseEndpoints(self, metadata: dict, spec: dict) -> []:
         endpoints = []
         for subset in spec['subsets']:
