@@ -10,23 +10,19 @@ class Direction(Enum):
 
 class Node:
 
-    def __init__(self, name: str, info: Optional(dict) = {}):
-        if name is None:
-            raise TypeError
-
-        self.name = name
+    def __init__(self, info: Optional(dict) = {}):
         self.info = info
         self.type = NodeType.MICROTOSCA_NODES_SERVICE
         self.incomingEdges = {}
         self.outgoingEdges = {}
         
-    def getName(self) -> str:
-        return self.name
+    def getInfo(self) -> dict:
+        return self.info
 
-    def getNodeType(self) -> NodeType:
+    def getType(self) -> NodeType:
         return self.type
 
-    def setNodeType(self, nodeType: nodeType):
+    def setType(self, nodeType: nodeType):
         if nodeType is None:
             raise TypeError
         self.type = nodeType
