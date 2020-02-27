@@ -16,8 +16,8 @@ class K8sParserContext:
     def __init__(self, versions: dict):
         self.versions = versions
 
-    def addVersion(self, version: str, parserClass: K8sParser):
-        self.versions[version] = parserClass
+    def addVersion(self, version: str, fqnParserClass: str):
+        self.versions[version] = fqnParserClass
 
     def parse(self, path: Path) -> []:
         if not(os.path.exists(path)):
