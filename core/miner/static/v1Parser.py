@@ -9,23 +9,17 @@ class V1Parser(K8sParser):
 
     @staticmethod
     def parse(contentDict: dict, contentStr: str) -> dict:
-        workloads = ['Deployment', 'ReplicaSet', 'DaemonSet', 'ReplicationController', 'StatefulSet', 'Job', 'Pod']
+        workloads = ['Deployment', 'ReplicaSet', 'DaemonSet', 'ReplicationController', 'StatefulSet', 'Job']
         info = {}
         try:
-            if content['kind'] in workloads:
-                podInfo = {}
-                if content['kind'] == 'Pod':
-                    podInfo = _parsePod(contentStr, content['metadata'], content['spec'])
-                elif 'template' in content['spec']:
-                    podInfo = _parsePod(contentStr, content['spec']['template']['metadata'], content['spec']['template']['spec'])
-                if podInfo:
-                    info = {'Type': 'pod', 'Info': podInfo}
+            if content['kind'] in workloads and 'template' in content['spec']:
+                info = _parsePod(contentStr, content['spec']['template']['metadata'], content['spec']['template']['spec'])
+            elif content['kind'] == 'Pod':
+                info = _parsePod(contentStr, content['metadata'], content['spec'])
             elif content['kind'] == 'Service':
-                svcParsedInfo = _parseService(content['metadata'], content['spec'])
-                info = {'Type': 'service', 'Info': svcParsedInfo}
+                info = _parseService(content['metadata'], content['spec'])
             elif content['kind'] == 'Endpoints':
-                endpointsInfo = _parseEndpoints(content['metadata'], content['spec'])
-                info = {'Type': 'endpoints', 'Info': endpointsInfo}
+                info = _parseEndpoints(content['metadata'], content['spec'])
         except:
             raise WrongFormatError('')
         return info
@@ -35,14 +29,15 @@ class V1Parser(K8sParser):
             raise WrongFormatError('')
         podInfo = {}
         ports = []
+        name = ''
+        if 'hostname' in spec:
+            name = spec['hostname']
+        else:
+            name = hashlib.sha256(contentStr).hexdigest()
         if 'labels' in metadata:
             podInfo['labels'] = metadata['labels']
         else:
             podInfo['labels'] = {}
-        if 'hostname' in spec:
-            podInfo['hostname'] = spec['hostname']
-        else:
-            podInfo['hostname'] = hashlib.sha256(contentStr).hexdigest()
         podInfo['image'] = spec['containers'][0]['image']
         for port in spec['containers'][0]['ports']:
             if 'name' in port:
@@ -51,7 +46,7 @@ class V1Parser(K8sParser):
                 portName = ''
             ports.append({'name': portName, 'number': port['containerPort']})
         podInfo['ports'] = ports
-        return podInfo
+        return {'type': 'pod', 'name': name, 'info': podInfo}
 
     def _parseService(self, metadata: dict, spec: dict) -> {}:
         namespace = 'default'
@@ -61,8 +56,7 @@ class V1Parser(K8sParser):
         if 'namespace' in metadata:
             namespace = metadata['namespace']
         #Suppose for now that is impossibile for services to use generateName
-        name = metadata['name']
-        svcInfo['name'] = name + '.' + namespace + '.svc'
+        name = metadata['name'] + '.' + namespace + '.svc'
         if 'selector' in spec:
             svcInfo['selector'] = spec['selector']
         else:
@@ -86,9 +80,9 @@ class V1Parser(K8sParser):
             svcInfo['type'] = spec['type']
         else:
             svcInfo['type'] = 'ClusterIP'
-        return svcInfo
+        return {'type': 'service', 'name': name, 'info': svcInfo}
 
-    def _parseEndpoints(self, metadata: dict, spec: dict) -> []:
+    def _parseEndpoints(self, metadata: dict, spec: dict) -> {}:
         endpoints = []
         for subset in spec['subsets']:
             for address in subset['addresses']:
@@ -100,4 +94,4 @@ class V1Parser(K8sParser):
                         portName = ''
                     ports.append({'name': portName, 'number': port['port']})
                 endpoints.append({'name': address['hostname'], 'ip': address['ip'], 'ports': ports})
-        return endpoints
+        return {'type': 'endpoints', 'info': endpoints}
