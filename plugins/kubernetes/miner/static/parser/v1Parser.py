@@ -1,6 +1,6 @@
 import hashlib
 from .k8sparser import K8sParser
-from ......core.errors import WrongFormatError
+from ....errors import WrongFormatError
 
 class V1Parser(K8sParser):
 
@@ -93,5 +93,5 @@ class V1Parser(K8sParser):
                     else:
                         portName = ''
                     ports.append({'name': portName, 'number': port['port']})
-                endpoints.append({'name': address['hostname'], 'ip': address['ip'], 'ports': ports})
+                endpoints.append({'type': 'endpoint', 'name': address['hostname'], 'ip': address['ip'], 'ports': ports})
         return {'type': 'endpoints', 'info': endpoints}

@@ -1,6 +1,6 @@
 import hashlib
 from .k8sParser import K8sParser
-from ...errors import WrongFormatError
+from ....errors import WrongFormatError
 
 class V1beta1Parser(K8sParser):
 

@@ -10,14 +10,14 @@ class Direction(Enum):
 
 class Node:
 
-    def __init__(self, info: Optional(dict) = {}):
-        self.info = info
+    def __init__(self, spec: Optional(dict) = {}):
+        self.spec = spec
         self.type = NodeType.MICROTOSCA_NODES_SERVICE
         self.incomingEdges = {}
         self.outgoingEdges = {}
         
-    def getInfo(self) -> dict:
-        return self.info
+    def getSpec(self) -> dict:
+        return self.spec
 
     def getType(self) -> NodeType:
         return self.type
