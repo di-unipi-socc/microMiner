@@ -9,7 +9,7 @@ from .k8sParser import K8sParser
 from .v1Parser import V1Parser
 from .v1beta1Parser import V1beta1Parser
 from .v1beta2Parser import V1beta2Parser
-from ...errors import UnsupportedTypeError
+from ....errors import UnsupportedTypeError
 
 class K8sParserContext:
     
