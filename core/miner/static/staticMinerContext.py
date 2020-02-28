@@ -4,5 +4,5 @@ from pathlib import Path
 class StaticMinerContext:
 
     @staticmethod
-    def doStaticMining(configFilePath: Path, nodes: dict):
+    def doStaticMining(config: dict, nodes: dict):
         pass
