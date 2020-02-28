@@ -5,22 +5,10 @@ class ArchMinerError(Exception):
     catch this base exception.
     """
 
-class K8sParserError(ArchMinerError):
-    def __init__(self, message):
-        self.message = message
-
-class UnsupportedTypeError(K8sParserError):
-    def __init__(self, message):
-        self.message = message
-
-class WrongFormatError(K8sParserError):
-    def __init__(self, message):
-        self.message = message
-
 class StaticMinerError(ArchMinerError):
     def __init__(self, message):
         self.message = message
 
-class WrongFolderError(StaticMinerError):
+class DynamicMinerError(ArchMinerError):
     def __init__(self, message):
         self.message = message
