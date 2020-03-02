@@ -1,7 +1,7 @@
 from .....core.topology.node import Node, Direction
 from .....core.topology.types import NodeType, RelationshipProperty
 from .....core.miner.static.staticMiner import StaticMiner
-from ...errors import StaticMinerError, WrongFolderError, UnsupportedTypeError, WrongFormatError
+from .errors import StaticMinerError, WrongFolderError, UnsupportedTypeError, WrongFormatError
 from .parser.k8sParserContext import K8sParserContext
 from os import listdir
 from os.path import Path, isdir, isfile, join, exists
