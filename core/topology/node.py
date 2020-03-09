@@ -13,6 +13,7 @@ class Node:
     def __init__(self, spec: Optional(dict) = {}):
         self.spec = spec
         self.type = NodeType.MICROTOSCA_NODES_SERVICE
+        self.isEdge = False
         self.incomingEdges = {}
         self.outgoingEdges = {}
         
@@ -26,6 +27,12 @@ class Node:
         if nodeType is None:
             raise TypeError
         self.type = nodeType
+    
+    def getIsEdge(self) -> bool:
+        return self.isEdge
+    
+    def setIsEdge(self, isEdge: bool):
+        self.isEdge = isEdge
 
     def addEdge(self, nodeName: str, direction: Direction, communications: Optional[List[Communication]] = []):
         if nodeName is None:
