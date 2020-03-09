@@ -57,9 +57,9 @@ class V1beta1Parser(K8sParser):
         else:
             ingressInfo['controller'] = ''
         if 'backend' in spec:
-            services.append({'serviceName': spec['backend']['serviceName'] + '.' + namespace + '.svc', 'servicePort': spec['backend']['servicePort']})
+            services.append({'name': spec['backend']['serviceName'] + '.' + namespace + '.svc', 'port': spec['backend']['servicePort']})
         for rule in spec['rules']:
             for path in rule['http']['paths']:
-                services.append({'serviceName': path['backend']['serviceName'] + '.' + namespace + '.svc', 'servicePort': path['backend']['servicePort']})
+                services.append({'name': path['backend']['serviceName'] + '.' + namespace + '.svc', 'port': path['backend']['servicePort']})
         ingressInfo['services'] = services
         return {'type': 'ingress', 'info': ingressInfo}
