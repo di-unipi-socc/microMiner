@@ -5,6 +5,7 @@ from .errors import StaticMinerError, WrongFolderError, UnsupportedTypeError, Wr
 from .parser.k8sParserContext import K8sParserContext
 from os import listdir
 from os.path import Path, isdir, isfile, join, exists
+from ruamel.yaml import YAML
 
 class K8sStaticMiner(StaticMiner):
 
@@ -16,6 +17,7 @@ class K8sStaticMiner(StaticMiner):
         files = cls._listFiles(info['folderPath'])
         parser = K8sParserContext(info['parserVersions'])
         parsedObjects = []
+        ingressControllers = {}
 
         #Effettuo il parsing dei file di Kubernetes
         for f in files:
@@ -26,22 +28,25 @@ class K8sStaticMiner(StaticMiner):
 
         #Recupero i pods e gli endpoints
         for parsedObject in parsedObjects:
-            if parsedObject:
-                if parsedObject['type'] == 'pod':
-                    node = Node(parsedObject)
-                    imageName = parsedObject['info']['image']
-                    if cls._isDatabase(imageName):
-                        node.setType(NodeType.MICROTOSCA_NODES_DATABASE)
-                    elif cls._isIngressController(imageName):
-                        pass
-                    nodes[parsedObject['name']] = node
-                elif parsedObject['type'] == 'endpoints':
-                    for endpoint in parsedObject['info']:
-                        nodes[endpoint['name']] = Node(endpoint)
+            if parsedObject and parsedObject['type'] == 'pod':
+                node = Node(parsedObject)
+                imageName = parsedObject['info']['image']
+                if cls._isDatabase(imageName, info['dbImagesPath']):
+                    node.setType(NodeType.MICROTOSCA_NODES_DATABASE)
+                elif ingressClass := cls._isIngressController(imageName, info['controllerImagesPath']):
+                    node.setType(NodeType.MICROTOSCA_NODES_MESSAGE_ROUTER)
+                    node.setIsEdge(True)
+                    ingressControllers[ingressClass].append(node)
+                nodes[parsedObject['name']] = node
+                parsedObjects.remove(parsedObject)
+            elif parsedObject and parsedObject['type'] == 'endpoints':
+                for endpoint in parsedObject['info']:
+                    nodes[endpoint['name']] = Node(endpoint)
+                parsedObjects.remove(parsedObject)
 
         #Recupero i service
         for parsedObject in parsedObjects:
-            if parsedObject['type'] == 'service':
+            if parsedObject and parsedObject['type'] == 'service':
                 serviceNode = Node(parsedObject)
                 if parsedObject['info']['selector']:
                     #caso in cui il service abbia il selettore
@@ -74,15 +79,23 @@ class K8sStaticMiner(StaticMiner):
                                     node.addEdge(parsedObject['name'], Direction.INCOMING)  
                                     serviceNode.addEdge(nodeName, Direction.OUTGOING)
                                     break
+                parsedObjects.remove(parsedObject)
 
         #Recupero gli ingress
         for parsedObject in parsedObjects:                    
-            if parsedObject['type'] == 'ingress':
-                #cercare i service corrispondenti
-                #cercare l'ingress controller corrispondente tramite l'annotation ingress.class (nel db il nome dell'ingress e poi nel dict degli ingress controller)
-                #cercare i service corrispondenti
-                #creare un unico nodo messageRouter nell'edge
-                pass
+            if parsedObject and parsedObject['type'] == 'ingress':
+                #recupero i controllers
+                if parsedObject['info']['controller'] != '':
+                    controllerNodes = ingressControllers[parsedObject['info']['controller']]
+                else:
+                    controllerNodes = ingressControllers.values()
+                #lego i controllers ai services corrispondenti
+                for controller in controllerNodes:
+                    for service in parsedObject['info']['services']:
+                        serviceNode = nodes[service['name']]
+                        controller.addEdge(service['name'], Direction.OUTGOING)
+                        serviceNode.addEdge(controller.getSpec()['name'], Direction.INCOMING)
+                parsedObjects.remove(parsedObject)
     
 
     @classmethod
@@ -92,13 +105,19 @@ class K8sStaticMiner(StaticMiner):
         return [join(folderPath, f) for f in listdir(folderPath) if isfile(join(folderPath, f))]
 
     @classmethod
-    def _isDatabase(cls, name: str) -> bool:
-        isDatabase = False
-        #TO-DO
-        return isDatabase
+    def _isDatabase(cls, imageName: str, filePath: str) -> bool:
+        loader = YAML(typ='safe')
+        databaseImages = loader.load(filePath)
+        for databaseImage in databaseImages.values():
+            if imageName == databaseImage['imageName']:
+                return True
+        return False
         
     @classmethod
-    def _isIngressController(cls, name: str) -> bool:
-        isIngressController = False
-        #TO-DO
-        return isIngressController
+    def _isIngressController(cls, imageName: str, filePath: str) -> str:
+        loader = YAML(typ='safe')
+        controllerImages = loader.load(filePath)
+        for controllerImage, ingressClass in controllerImages:
+            if imageName == controllerImage:
+                return ingressClass
+        return None
