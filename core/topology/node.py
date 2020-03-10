@@ -63,3 +63,6 @@ class Node:
             return self.outgoingEdges
         else:
             raise ValueError
+    
+    def dump(self) -> str:
+        return {'type': self.type, 'isEdge': self.isEdge, 'incomingEdges': self.incomingEdges, 'outgoingEdges': self.outgoingEdges}
