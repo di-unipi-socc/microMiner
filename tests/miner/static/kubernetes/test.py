@@ -1,30 +1,25 @@
 from ruamel import yaml
-from .....core.miner.static.staticMinerContext import StaticMinerContext
-from .....core.topology.node import Node
+from core.topology.node import Node
+from core.miner.static.staticMinerContext import StaticMinerContext
+from ruamel.yaml import YAML
+from pathlib import Path
 
-if __name__ == '__main__':
-    config = {  
-                'strategy': 'plugins.miner.static.kubernetes.k8sStaticMiner.K8sStaticMiner',
-                'arguments':
-                    {
-                        'folderPath': './sock-shop',
-	                    'parserVersions':
-		                {
-                            'v1': 'plugins.miner.static.kubernetes.parser.v1Parser.V1Parser', 
-		                    'v1beta1': 'plugins.miner.static.kubernetes.parser.v1beta1Parser.V1beta1Parser'
-                        },
-	                    'dbImagesPath': './dbImages.yml',
-	                    'controllerImagesPath': './controllerImages.txt'
-                    }
-            }
+print('Inizio test')
+
+loader = YAML(typ='safe')
+config = loader.load(Path('./tests/miner/static/kubernetes/config.yml'))
     
-    fileContent = ''
-    nodes = {}
-    StaticMinerContext.doStaticMining(config, nodes)
+fileContent = ''
+nodes = {}
+StaticMinerContext.doStaticMining(config, nodes)
+
+print('Nodi generati')
     
-    for nodeName, node in nodes:
-        fileContent += yaml.dump({'name': nodeName, 'spec': node.dump()})
-        fileContent += '\n---\n'
-    
-    with open('./result.txt', 'w') as f:
-        f.write(fileContent)
+for nodeName, node in nodes.items():
+    fileContent += yaml.dump({'name': nodeName, 'spec': node.dump()})
+    fileContent += '\n---\n'
+
+with open('./tests/miner/static/kubernetes/result.yml', 'w') as f:
+    f.write(fileContent)
+
+print('File creato')
