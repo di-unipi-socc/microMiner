@@ -1,5 +1,6 @@
 import hashlib
 from .k8sParser import K8sParser
+from .v1Parser import V1Parser
 from ..errors import WrongFormatError
 
 class V1beta1Parser(K8sParser):
@@ -7,46 +8,23 @@ class V1beta1Parser(K8sParser):
     def __init__(self):
         pass
 
-    @staticmethod
-    def parse(content: dict) -> dict:
+    @classmethod
+    def parse(cls, contentDict: dict, contentStr: str) -> dict:
         workloads = ['Deployment', 'ReplicaSet', 'DaemonSet', 'StatefulSet']
         info = {}
         try:
-            if content['kind'] in workloads and 'template' in content['spec']:
-                info = _parsePod(contentStr, content['spec']['template']['metadata'], content['spec']['template']['spec']) 
-            elif content['kind'] == 'CronJob' and 'template' in (jobSpec := content['spec']['jobTemplate']['spec']):
-                info = _parsePod(contentStr, jobSpec['template']['metadata'], jobSpec['template']['spec'])
-            elif content['kind'] == 'Ingress':
-                info = _parseIngress(content['metadata'], content['spec'])
+            if contentDict['kind'] in workloads and 'template' in contentDict['spec']:
+                info = V1Parser._parsePod(contentStr, contentDict['spec']['template']['metadata'], contentDict['spec']['template']['spec']) 
+            elif contentDict['kind'] == 'CronJob' and 'template' in (jobSpec := contentDict['spec']['jobTemplate']['spec']):
+                info = V1Parser._parsePod(contentStr, jobSpec['template']['metadata'], jobSpec['template']['spec'])
+            elif contentDict['kind'] == 'Ingress':
+                info = cls._parseIngress(contentDict['metadata'], contentDict['spec'])
         except:
             raise WrongFormatError('')
         return info
-        
-    def _parsePod(self, contentStr: str, metadata: dict, spec: dict) -> {}:
-        if len(spec['containers']) != 1:
-            raise WrongFormatError('')
-        podInfo = {}
-        ports = []
-        name = ''
-        if 'hostname' in spec:
-            name = spec['hostname']
-        else:
-            name = hashlib.sha256(contentStr).hexdigest()
-        if 'labels' in metadata:
-            podInfo['labels'] = metadata['labels']
-        else:
-            podInfo['labels'] = {}
-        podInfo['image'] = spec['containers'][0]['image']
-        for port in spec['containers'][0]['ports']:
-            if 'name' in port:
-                portName = port['name']
-            else:
-                portName = ''
-            ports.append({'name': portName, 'number': port['containerPort']})
-        podInfo['ports'] = ports
-        return {'type': 'pod', 'name': name, 'info': podInfo}
 
-    def _parseIngress(self, metadata: dict, spec: dict) -> {}:
+    @classmethod
+    def _parseIngress(cls, metadata: dict, spec: dict) -> {}:
         ingressInfo = {}
         services = []
         namespace = 'default'

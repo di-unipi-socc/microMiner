@@ -29,7 +29,7 @@ class K8sParserContext:
             contentDict = json.loads(contentStr)
             try:
                 apiVersion = contentDict['apiVersion'].split('/').pop()
-                parser = getClass(versions[apiVersion])
+                parser = self._getClass(self.versions[apiVersion])
             except:
                 raise UnsupportedTypeError('Unsupported apiVersion')
             nodesInfo.append(parser.parse(contentDict, contentStr))
@@ -40,10 +40,10 @@ class K8sParserContext:
                 content = loader.load(yaml)
                 try:
                     apiVersion = content['apiVersion'].split('/').pop()
-                    parser = getClass(versions[apiVersion])
+                    parser = self._get_class(self.versions[apiVersion])
                 except:
                     raise UnsupportedTypeError('Unsupported apiVersion')
-                nodesInfo.append(parser.parse(contentDict, yaml))
+                nodesInfo.append(parser.parse(content, yaml))
         else:
             raise UnsupportedTypeError('Unsupported file type')
         return nodesInfo

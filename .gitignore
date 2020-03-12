@@ -1,1 +1,5 @@
-core/__pycache__/*
+__pycache__/
+build
+core.egg-info
+dist
+.coverage

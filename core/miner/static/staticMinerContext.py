@@ -7,8 +7,8 @@ class StaticMinerContext:
 
     @classmethod
     def doStaticMining(cls, config: dict, nodes: dict):
-        staticMiner = cls._get_class(config['strategy'])
-        staticMiner.updateTopology(config['arguments'], nodes)
+        staticMinerStrategy = cls._get_class(config['strategy'])
+        staticMinerStrategy.updateTopology(config['arguments'], nodes)
     
     @classmethod
     def _get_class(cls, fqnClass: str) -> Type[StaticMiner]:

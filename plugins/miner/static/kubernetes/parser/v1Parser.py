@@ -1,5 +1,5 @@
 import hashlib
-from .k8sparser import K8sParser
+from .k8sParser import K8sParser
 from ..errors import WrongFormatError
 
 class V1Parser(K8sParser):
@@ -7,24 +7,25 @@ class V1Parser(K8sParser):
     def __init__(self):
         pass
 
-    @staticmethod
-    def parse(contentDict: dict, contentStr: str) -> dict:
+    @classmethod
+    def parse(cls, contentDict: dict, contentStr: str) -> dict:
         workloads = ['Deployment', 'ReplicaSet', 'DaemonSet', 'ReplicationController', 'StatefulSet', 'Job']
         info = {}
         try:
-            if content['kind'] in workloads and 'template' in content['spec']:
-                info = _parsePod(contentStr, content['spec']['template']['metadata'], content['spec']['template']['spec'])
-            elif content['kind'] == 'Pod':
-                info = _parsePod(contentStr, content['metadata'], content['spec'])
-            elif content['kind'] == 'Service':
-                info = _parseService(content['metadata'], content['spec'])
-            elif content['kind'] == 'Endpoints':
-                info = _parseEndpoints(content['metadata'], content['spec'])
+            if contentDict['kind'] in workloads and 'template' in contentDict['spec']:
+                info = cls._parsePod(contentStr, contentDict['spec']['template']['metadata'], contentDict['spec']['template']['spec'])
+            elif contentDict['kind'] == 'Pod':
+                info = cls._parsePod(contentStr, contentDict['metadata'], contentDict['spec'])
+            elif contentDict['kind'] == 'Service':
+                info = cls._parseService(contentDict['metadata'], contentDict['spec'])
+            elif contentDict['kind'] == 'Endpoints':
+                info = cls._parseEndpoints(contentDict['metadata'], contentDict['spec'])
         except:
             raise WrongFormatError('')
         return info
 
-    def _parsePod(self, contentStr: str, metadata: dict, spec: dict) -> {}:
+    @classmethod
+    def _parsePod(cls, contentStr: str, metadata: dict, spec: dict) -> {}:
         if len(spec['containers']) != 1:
             raise WrongFormatError('')
         podInfo = {}
@@ -33,7 +34,7 @@ class V1Parser(K8sParser):
         if 'hostname' in spec:
             name = spec['hostname']
         else:
-            name = hashlib.sha256(contentStr).hexdigest()
+            name = hashlib.sha256(contentStr.encode('utf-8')).hexdigest()
         if 'labels' in metadata:
             podInfo['labels'] = metadata['labels']
         else:
@@ -48,7 +49,8 @@ class V1Parser(K8sParser):
         podInfo['ports'] = ports
         return {'type': 'pod', 'name': name, 'info': podInfo}
 
-    def _parseService(self, metadata: dict, spec: dict) -> {}:
+    @classmethod
+    def _parseService(cls, metadata: dict, spec: dict) -> {}:
         namespace = 'default'
         name = ''
         svcInfo = {}
@@ -82,7 +84,8 @@ class V1Parser(K8sParser):
             svcInfo['type'] = 'ClusterIP'
         return {'type': 'service', 'name': name, 'info': svcInfo}
 
-    def _parseEndpoints(self, metadata: dict, spec: dict) -> {}:
+    @classmethod
+    def _parseEndpoints(cls, metadata: dict, spec: dict) -> {}:
         endpoints = []
         for subset in spec['subsets']:
             for address in subset['addresses']:

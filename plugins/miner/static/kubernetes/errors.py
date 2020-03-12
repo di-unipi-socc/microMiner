@@ -1,4 +1,4 @@
-from ...core.errors import StaticMinerError, DynamicMinerError
+from core.errors import StaticMinerError, DynamicMinerError
 
 class WrongFolderError(StaticMinerError):
     def __init__(self, message):

@@ -5,7 +5,7 @@ class StaticMiner(ABC):
     def __init__(self):
         pass
 
+    @classmethod
     @abstractmethod
-    @staticmethod
-    def updateTopology(info: dict, nodes: dict):
+    def updateTopology(cls, info: dict, nodes: dict):
         pass

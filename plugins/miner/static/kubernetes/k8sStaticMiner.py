@@ -1,11 +1,13 @@
-from .....core.topology.node import Node, Direction
-from .....core.topology.types import NodeType, RelationshipProperty
-from .....core.miner.static.staticMiner import StaticMiner
+from core.topology.node import Node, Direction
+from core.topology.microToscaTypes import NodeType
+from core.miner.static.staticMiner import StaticMiner
 from .errors import StaticMinerError, WrongFolderError, UnsupportedTypeError, WrongFormatError
 from .parser.k8sParserContext import K8sParserContext
+from pathlib import Path
 from os import listdir
-from os.path import Path, isdir, isfile, join, exists
+from os.path import isdir, isfile, join, exists
 from ruamel.yaml import YAML
+import traceback
 
 class K8sStaticMiner(StaticMiner):
 
@@ -24,12 +26,15 @@ class K8sStaticMiner(StaticMiner):
             try:
                 parsedObjects.extend(parser.parse(f))
             except UnsupportedTypeError:
-                print(f + 'is unsupported')
+                print('>>> traceback <<<')
+                traceback.print_exc()
+                print('>>> end of traceback <<<')
 
         #Recupero i pods e gli endpoints
         for parsedObject in parsedObjects:
             if parsedObject and parsedObject['type'] == 'pod':
                 node = Node(parsedObject)
+                '''
                 imageName = parsedObject['info']['image']
                 if cls._isDatabase(imageName, info['dbImagesPath']):
                     node.setType(NodeType.MICROTOSCA_NODES_DATABASE)
@@ -37,12 +42,13 @@ class K8sStaticMiner(StaticMiner):
                     node.setType(NodeType.MICROTOSCA_NODES_MESSAGE_ROUTER)
                     node.setIsEdge(True)
                     ingressControllers[ingressClass].append(node)
+                '''
                 nodes[parsedObject['name']] = node
-                parsedObjects.remove(parsedObject)
+                #parsedObjects.remove(parsedObject)
             elif parsedObject and parsedObject['type'] == 'endpoints':
                 for endpoint in parsedObject['info']:
                     nodes[endpoint['name']] = Node(endpoint)
-                parsedObjects.remove(parsedObject)
+                #parsedObjects.remove(parsedObject)
 
         #Recupero i service
         for parsedObject in parsedObjects:
@@ -50,12 +56,12 @@ class K8sStaticMiner(StaticMiner):
                 serviceNode = Node(parsedObject)
                 if parsedObject['info']['selector']:
                     #caso in cui il service abbia il selettore
-                    for nodeName, node in nodes:
+                    for nodeName, node in nodes.items():
                         spec = node.getSpec()
                         if spec['type'] == 'pod' and 'labels' in spec['info']:
-                            for key1, value1 in parsedObject['info']['selector']:
+                            for key1, value1 in parsedObject['info']['selector'].items():
                                 found = False
-                                for key2, value2 in spec['info']['labels']:
+                                for key2, value2 in spec['info']['labels'].items():
                                     if key1 == key2 and value1 == value2:
                                         found = True
                                         break
@@ -66,7 +72,7 @@ class K8sStaticMiner(StaticMiner):
                                 serviceNode.addEdge(nodeName, Direction.OUTGOING)
                 else:
                     #caso in cui il service sia senza selettore
-                    for nodeName, node in nodes:
+                    for nodeName, node in nodes.items():
                         spec = node.getSpec()
                         if spec['type'] == 'endpoint':
                             found = False
@@ -79,7 +85,8 @@ class K8sStaticMiner(StaticMiner):
                                     node.addEdge(parsedObject['name'], Direction.INCOMING)  
                                     serviceNode.addEdge(nodeName, Direction.OUTGOING)
                                     break
-                parsedObjects.remove(parsedObject)
+                nodes[parsedObject['name']] = serviceNode
+                #parsedObjects.remove(parsedObject)
 
         #Recupero gli ingress
         for parsedObject in parsedObjects:                    
@@ -100,14 +107,14 @@ class K8sStaticMiner(StaticMiner):
 
     @classmethod
     def _listFiles(cls, folderPath: str) -> []:
-        if not exists(folderPath) or not isdir(Path(folderPath)):
+        if not exists(Path(folderPath)) or not isdir(Path(folderPath)):
             raise WrongFolderError('')
         return [join(folderPath, f) for f in listdir(folderPath) if isfile(join(folderPath, f))]
 
     @classmethod
     def _isDatabase(cls, imageName: str, filePath: str) -> bool:
         loader = YAML(typ='safe')
-        databaseImages = loader.load(filePath)
+        databaseImages = loader.load(Path(filePath))
         for databaseImage in databaseImages.values():
             if imageName == databaseImage['imageName']:
                 return True

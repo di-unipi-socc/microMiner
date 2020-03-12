@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import Optional
 from typing import List
-from .types import NodeType, RelationshipProperty
+from .microToscaTypes import NodeType, RelationshipProperty
 from .communication import Communication
 
 class Direction(Enum):
@@ -10,7 +10,7 @@ class Direction(Enum):
 
 class Node:
 
-    def __init__(self, spec: Optional(dict) = {}):
+    def __init__(self, spec):
         self.spec = spec
         self.type = NodeType.MICROTOSCA_NODES_SERVICE
         self.isEdge = False
@@ -23,7 +23,7 @@ class Node:
     def getType(self) -> NodeType:
         return self.type
 
-    def setType(self, nodeType: nodeType):
+    def setType(self, nodeType: NodeType):
         if nodeType is None:
             raise TypeError
         self.type = nodeType
@@ -65,4 +65,4 @@ class Node:
             raise ValueError
     
     def dump(self) -> str:
-        return {'type': self.type, 'isEdge': self.isEdge, 'incomingEdges': self.incomingEdges, 'outgoingEdges': self.outgoingEdges}
+        return {'type': self.type, 'spec': self.spec, 'isEdge': self.isEdge, 'incomingEdges': self.incomingEdges, 'outgoingEdges': self.outgoingEdges}
