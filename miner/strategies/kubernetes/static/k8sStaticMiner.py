@@ -85,6 +85,7 @@ class K8sStaticMiner(StaticMiner):
                                     node.addEdge(parsedObject['name'], Direction.INCOMING)  
                                     serviceNode.addEdge(nodeName, Direction.OUTGOING)
                                     break
+                serviceNode.setType(NodeType.MICROTOSCA_NODES_MESSAGE_ROUTER)
                 nodes[parsedObject['name']] = serviceNode
                 #parsedObjects.remove(parsedObject)
 
