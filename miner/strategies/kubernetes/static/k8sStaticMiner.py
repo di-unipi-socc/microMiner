@@ -1,6 +1,6 @@
-from core.topology.node import Node, Direction
-from core.topology.microToscaTypes import NodeType
-from core.miner.static.staticMiner import StaticMiner
+from topology.node import Node, Direction
+from topology.microToscaTypes import NodeType
+from miner.generic.static.staticMiner import StaticMiner
 from .errors import StaticMinerError, WrongFolderError, UnsupportedTypeError, WrongFormatError
 from .parser.k8sParserContext import K8sParserContext
 from pathlib import Path
@@ -15,9 +15,9 @@ class K8sStaticMiner(StaticMiner):
         pass
 
     @classmethod
-    def updateTopology(cls, info: dict, nodes: dict):
-        files = cls._listFiles(info['folderPath'])
-        parser = K8sParserContext(info['parserVersions'])
+    def updateTopology(cls, source: str, info: dict, nodes: dict):
+        files = cls._listFiles(source)
+        parser = K8sParserContext(info['parser'])
         parsedObjects = []
         ingressControllers = {}
 
@@ -34,15 +34,13 @@ class K8sStaticMiner(StaticMiner):
         for parsedObject in parsedObjects:
             if parsedObject and parsedObject['type'] == 'pod':
                 node = Node(parsedObject)
-                '''
                 imageName = parsedObject['info']['image']
-                if cls._isDatabase(imageName, info['dbImagesPath']):
+                if cls._isDatabase(imageName, info['dbImages']):
                     node.setType(NodeType.MICROTOSCA_NODES_DATABASE)
-                elif ingressClass := cls._isIngressController(imageName, info['controllerImagesPath']):
+                elif ingressClass := cls._isIngressController(imageName, info['controllerImages']):
                     node.setType(NodeType.MICROTOSCA_NODES_MESSAGE_ROUTER)
                     node.setIsEdge(True)
                     ingressControllers[ingressClass].append(node)
-                '''
                 nodes[parsedObject['name']] = node
                 #parsedObjects.remove(parsedObject)
             elif parsedObject and parsedObject['type'] == 'endpoints':
@@ -117,15 +115,15 @@ class K8sStaticMiner(StaticMiner):
         loader = YAML(typ='safe')
         databaseImages = loader.load(Path(filePath))
         for databaseImage in databaseImages.values():
-            if imageName == databaseImage['imageName']:
+            if imageName == databaseImage:
                 return True
         return False
         
     @classmethod
     def _isIngressController(cls, imageName: str, filePath: str) -> str:
         loader = YAML(typ='safe')
-        controllerImages = loader.load(filePath)
-        for controllerImage, ingressClass in controllerImages:
+        controllerImages = loader.load(Path(filePath))
+        for controllerImage, ingressClass in controllerImages.items():
             if imageName == controllerImage:
                 return ingressClass
         return None
