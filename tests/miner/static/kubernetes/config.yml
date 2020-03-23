@@ -1,8 +1,0 @@
-strategy: plugins.miner.static.kubernetes.k8sStaticMiner.K8sStaticMiner
-arguments:
-    folderPath: C:/Users/peppi/Documents/Università/Tesi/ArchMiner/tests/miner/static/kubernetes/sock-shop
-    parserVersions:
-        v1: plugins.miner.static.kubernetes.parser.v1Parser.V1Parser 
-        v1beta1: plugins.miner.static.kubernetes.parser.v1beta1Parser.V1beta1Parser
-    dbImagesPath: ./tests/miner/static/kubernetes/dbImages.yml
-    controllerImagesPath: ./tests/miner/static/kubernetes/controllerImages.txt
