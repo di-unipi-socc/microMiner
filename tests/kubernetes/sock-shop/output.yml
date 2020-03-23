@@ -1,0 +1,120 @@
+description: sockshop
+imports:
+- {micro: https://di-unipi-socc.github.io/microTOSCA/1.1/microTOSCA.yaml}
+topology_template:
+  groups: {}
+  node_templates:
+    1a77e2c193e4abb013fcc81b6781cc5b171c314d596acc5f7a87cb99773122f0:
+      requirements: []
+      type: micro.nodes.Service
+    40d775475646897de964656c00c552c8983a87163a12089125d4d18ad3beab4a:
+      requirements: []
+      type: micro.nodes.Service
+    4f63fc35b518e8879227122f8d044c4f08b8105f7f4b674a1d0620eebe07f0f4:
+      requirements: []
+      type: micro.nodes.Service
+    630e2362d78cbba68b539a0b054adc9fc1fde724bcff8f47deac6b667ac18b11:
+      requirements: []
+      type: micro.nodes.Service
+    6ab78003068819c9e1b7ccb3623c306d6a8fcf8f1939054d753eaf32e4d1cf71:
+      requirements: []
+      type: micro.nodes.Service
+    6ec335c62fd69e11bf709418a5916a4509501994325a22208b9e0a6cdc22f309:
+      requirements: []
+      type: micro.nodes.Service
+    787fbad74f1ffdeae793af904f3f0ff799f4cbfa4021c9504db2844494a54e4d:
+      requirements: []
+      type: micro.nodes.Service
+    859be5c466ca142ecf656b042d03830f1f70ad666fafe610b4204dc4651868e5:
+      requirements: []
+      type: micro.nodes.Service
+    aac87203e2767d0a9648a5f1592950c5c10c9cebb58ca000804959e740efc4cc:
+      requirements: []
+      type: micro.nodes.Service
+    bfa45d189b46fc62f0434d682784454e01db834a04f93edd95017f2e762dd7f0:
+      requirements: []
+      type: micro.nodes.Service
+    c7adebf237ea331223a09af2309a13502877f3014733584bebea14a618c06676:
+      requirements: []
+      type: micro.nodes.Service
+    carts-db.sock-shop.svc:
+      requirements:
+      - {interaction: aac87203e2767d0a9648a5f1592950c5c10c9cebb58ca000804959e740efc4cc}
+      type: micro.nodes.MessageRouter
+    carts.sock-shop.svc:
+      requirements:
+      - {interaction: 6ab78003068819c9e1b7ccb3623c306d6a8fcf8f1939054d753eaf32e4d1cf71}
+      type: micro.nodes.MessageRouter
+    catalogue-db.sock-shop.svc:
+      requirements:
+      - {interaction: 1a77e2c193e4abb013fcc81b6781cc5b171c314d596acc5f7a87cb99773122f0}
+      type: micro.nodes.MessageRouter
+    catalogue.sock-shop.svc:
+      requirements:
+      - {interaction: c7adebf237ea331223a09af2309a13502877f3014733584bebea14a618c06676}
+      type: micro.nodes.MessageRouter
+    d250471f745e99b0ffbdf2fc70e0788ad9a3bfa2e8d8804cf7995357fdc86888:
+      requirements: []
+      type: micro.nodes.Service
+    f220cd74af1ddef5f3ba00f990b4dc9a8f5f11312566bffb67e034c7f2e20a00:
+      requirements: []
+      type: micro.nodes.Service
+    front-end.sock-shop.svc:
+      requirements:
+      - {interaction: 4f63fc35b518e8879227122f8d044c4f08b8105f7f4b674a1d0620eebe07f0f4}
+      type: micro.nodes.MessageRouter
+    orders-db.sock-shop.svc:
+      requirements:
+      - {interaction: 40d775475646897de964656c00c552c8983a87163a12089125d4d18ad3beab4a}
+      type: micro.nodes.MessageRouter
+    orders.sock-shop.svc:
+      requirements:
+      - {interaction: 859be5c466ca142ecf656b042d03830f1f70ad666fafe610b4204dc4651868e5}
+      type: micro.nodes.MessageRouter
+    payment.sock-shop.svc:
+      requirements:
+      - {interaction: d250471f745e99b0ffbdf2fc70e0788ad9a3bfa2e8d8804cf7995357fdc86888}
+      type: micro.nodes.MessageRouter
+    queue-master.sock-shop.svc:
+      requirements:
+      - {interaction: bfa45d189b46fc62f0434d682784454e01db834a04f93edd95017f2e762dd7f0}
+      type: micro.nodes.MessageRouter
+    rabbitmq.sock-shop.svc:
+      requirements:
+      - {interaction: 787fbad74f1ffdeae793af904f3f0ff799f4cbfa4021c9504db2844494a54e4d}
+      type: micro.nodes.MessageRouter
+    shipping.sock-shop.svc:
+      requirements:
+      - {interaction: 6ec335c62fd69e11bf709418a5916a4509501994325a22208b9e0a6cdc22f309}
+      type: micro.nodes.MessageRouter
+    user-db.sock-shop.svc:
+      requirements:
+      - {interaction: 630e2362d78cbba68b539a0b054adc9fc1fde724bcff8f47deac6b667ac18b11}
+      type: micro.nodes.MessageRouter
+    user.sock-shop.svc:
+      requirements:
+      - {interaction: f220cd74af1ddef5f3ba00f990b4dc9a8f5f11312566bffb67e034c7f2e20a00}
+      type: micro.nodes.MessageRouter
+  relationship_templates:
+    c:
+      properties: {circuit_breaker: true}
+      type: micro.relationships.InteractsWith
+    cd:
+      properties: {circuit_breaker: true, dynamic_discovery: true}
+      type: micro.relationships.InteractsWith
+    d:
+      properties: {dynamic_discovery: true}
+      type: micro.relationships.InteractsWith
+    t:
+      properties: {timeout: true}
+      type: micro.relationships.InteractsWith
+    tc:
+      properties: {circuit_breaker: true, timeout: true}
+      type: micro.relationships.InteractsWith
+    tcd:
+      properties: {circuit_breaker: true, dynamic_discovery: true, timeout: true}
+      type: micro.relationships.InteractsWith
+    td:
+      properties: {dynamic_discovery: true, timeout: true}
+      type: micro.relationships.InteractsWith
+tosca_definitions_version: micro_tosca_yaml_1.1
