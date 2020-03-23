@@ -6,9 +6,9 @@ from .staticMiner import StaticMiner
 class StaticMinerContext:
 
     @classmethod
-    def doStaticMining(cls, config: dict, nodes: dict):
-        staticMinerStrategy = cls._get_class(config['strategy'])
-        staticMinerStrategy.updateTopology(config['arguments'], nodes)
+    def doStaticMining(cls, className: str, source: str, strategyArgs: dict, nodes: dict):
+        staticMinerClass = cls._get_class(className)
+        staticMinerClass.updateTopology(source, strategyArgs, nodes)
     
     @classmethod
     def _get_class(cls, fqnClass: str) -> Type[StaticMiner]:
