@@ -1,1 +1,13 @@
 # Add miner strategies here
+kubernetes:
+    static:
+        class: miner.strategies.kubernetes.static.k8sStaticMiner.K8sStaticMiner
+        args:
+            parser:
+                v1: miner.strategies.kubernetes.static.parser.v1Parser.V1Parser 
+                v1beta1: miner.strategies.kubernetes.static.parser.v1beta1Parser.V1beta1Parser
+            dbImages: miner/strategies/kubernetes/static/containerImages/dbImages.yml
+            controllerImages: miner/strategies/kubernetes/static/containerImages/controllerImages.yml
+#    dynamic:
+#        class: miner.strategies.kubernetes.dynamic.k8sDynamicMiner.K8sDynamicMiner
+#        args: {}
