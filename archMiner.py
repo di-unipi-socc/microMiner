@@ -12,10 +12,11 @@ def cli():
 
 @cli.command()
 @click.argument('strategy')
-@click.argument('name')
 @click.argument('source')
 @click.argument('target')
-def generate(strategy, name, source, target):
+@click.option('--time', default = 60, help = 'Seconds of monitoring')
+@click.option('--name', default = 'General application', help = 'Name of the microTOSCA model')
+def generate(strategy, source, target, time, name):
     nodes = {}
     strategyConfig = Parser.searchMinerStrategy(strategy)
     if 'static' in strategyConfig:
@@ -23,6 +24,7 @@ def generate(strategy, name, source, target):
         StaticMinerContext.doStaticMining(strategyConfig['static']['class'], source, strategyConfig['static']['args'], nodes)
     if 'dynamic' in strategyConfig:
         print('Executing dynamic mining...')
+        strategyConfig['dynamic']['args']['time'] = time
         DynamicMinerContext.doDynamicMining(strategyConfig['dynamic']['class'], source, strategyConfig['dynamic']['args'], nodes)
     
     #REFINER

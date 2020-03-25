@@ -2,7 +2,7 @@ from .exporter import Exporter
 from topology.node import Node, Direction
 from topology.microToscaTypes import NodeType, RelationshipProperty
 from ruamel import yaml
-from typing import List
+from typing import List, Optional
 
 class YMLExporter(Exporter):
 
@@ -10,7 +10,7 @@ class YMLExporter(Exporter):
         pass
 
     @classmethod
-    def export(cls, topology: dict, modelName: str, path: str):
+    def export(cls, topology: dict, path: str, modelName: Optional[str] = 'Generic application'):
         with open(path, 'w') as f:
             yamlContent = yaml.dump(cls._toDict(topology, modelName))
             f.write(yamlContent)
