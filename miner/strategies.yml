@@ -8,6 +8,7 @@ kubernetes:
                 v1beta1: miner.strategies.kubernetes.static.parser.v1beta1Parser.V1beta1Parser
             dbImages: miner/strategies/kubernetes/static/containerImages/dbImages.yml
             controllerImages: miner/strategies/kubernetes/static/containerImages/controllerImages.yml
-#    dynamic:
-#        class: miner.strategies.kubernetes.dynamic.k8sDynamicMiner.K8sDynamicMiner
-#        args: {}
+    dynamic:
+        class: miner.strategies.kubernetes.dynamic.k8sDynamicMiner.K8sDynamicMiner
+        args:
+            monitoringContainer: giuseppemuntoni/packet-sniffer:2.0
