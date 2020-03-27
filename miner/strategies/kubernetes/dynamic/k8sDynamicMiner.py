@@ -73,5 +73,5 @@ class K8sDynamicMiner(DynamicMiner):
         if not 'hostname' in podSpec:
             podSpec['hostname'] = hashlib.sha256(contentStr.encode('utf-8')).hexdigest()
 
-        filePath = join('/home/path', imageName)
-        podSpec['containers'].append({'image': imageName, 'command': ['timeout', str(time), 'tcpdump', '-w', filePath]})
+        filePath = join('/home/path', imageName + '.json')
+        podSpec['containers'].append({'image': imageName, 'command': ['tshark', '-a', 'duration:' + str(time), '-N' , 'nNdt' '-T', 'json', '> ' + filePath]})
