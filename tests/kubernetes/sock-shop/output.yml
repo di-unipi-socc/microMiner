@@ -1,4 +1,4 @@
-description: sockshop
+description: Generic application
 imports:
 - {micro: https://di-unipi-socc.github.io/microTOSCA/1.1/microTOSCA.yaml}
 topology_template:
