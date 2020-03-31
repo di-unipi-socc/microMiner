@@ -7,3 +7,11 @@ class WrongFolderError(DynamicMinerError):
 class DeploymentError(DynamicMinerError):
     def __init__(self, message):
         self.message = message
+
+class MonitoringError(DynamicMinerError):
+    def __init__(self, message):
+        self.message = message
+
+class TestError(DynamicMinerError):
+    def __init__(self, message):
+        self.message = message
