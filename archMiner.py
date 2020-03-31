@@ -15,8 +15,9 @@ def cli():
 @click.argument('source')
 @click.argument('target')
 @click.option('--time', default = 60, help = 'Seconds of monitoring')
+@click.option('--test', help = 'FQN module of test')
 @click.option('--name', default = 'Generic application', help = 'Name of the microTOSCA model')
-def generate(strategy, source, target, time, name):
+def generate(strategy, source, target, time, test, name):
     nodes = {}
     strategyConfig = Parser.searchMinerStrategy(strategy)
     if 'static' in strategyConfig:
@@ -26,9 +27,11 @@ def generate(strategy, source, target, time, name):
         print('Executing dynamic mining...')
         if 'args' in strategyConfig['dynamic']:
             strategyConfig['dynamic']['args']['time'] = time
+            strategyConfig['dynamic']['args']['test'] = test
             DynamicMinerContext.doDynamicMining(strategyConfig['dynamic']['class'], source, strategyConfig['dynamic']['args'], nodes)
         else:
             strategyConfig['dynamic']['args'] = {'time': time}
+            strategyConfig['dynamic']['args'] = {'test': test}
             DynamicMinerContext.doDynamicMining(strategyConfig['dynamic']['class'], source, strategyConfig['dynamic']['args'], nodes)
     
     #REFINER
