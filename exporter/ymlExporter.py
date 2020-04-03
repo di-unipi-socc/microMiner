@@ -23,16 +23,18 @@ class YMLExporter(Exporter):
 
         nodeTemplates = {}
         edgeNodes = []
-        for nodeName, node in topology.items():
+        for node in topology.values():
+            nodeName = node.getFrontendName()
             microToscaNode = {}
             microToscaNode['type'] = node.getType().value
             microToscaNode['requirements'] = []
             requirements = node.getEdges(Direction.OUTGOING)
             for requirementName, requirement in requirements.items():
+                requirementNodeName = topology[requirementName].getFrontendName()
                 if not requirement['properties']:
-                    microToscaNode['requirements'].append({'interaction': requirementName})
+                    microToscaNode['requirements'].append({'interaction': requirementNodeName})
                 else:
-                    microToscaNode['requirements'].append({'interaction': {'node': requirementName, 'relationship': cls._buildYmlRelationshipProperty(requirement['properties'])}})
+                    microToscaNode['requirements'].append({'interaction': {'node': requirementNodeName, 'relationship': cls._buildYmlRelationshipProperty(requirement['properties'])}})
             if node.getIsEdge():
                 edgeNodes.append(nodeName)
             nodeTemplates[nodeName] = microToscaNode 
