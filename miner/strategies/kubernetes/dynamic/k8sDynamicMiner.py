@@ -1,4 +1,5 @@
 from miner.generic.dynamic.dynamicMiner import DynamicMiner
+from topology.node import Node, Direction
 from .errors import WrongFolderError, DeploymentError, MonitoringError, TestError
 from os.path import isdir, isfile, join, exists
 from kubernetes import client, config, utils
@@ -8,6 +9,7 @@ from ruamel import yaml
 from ruamel.yaml import YAML
 from pathlib import Path
 import importlib
+import json
 import hashlib
 import time
 import os
@@ -77,8 +79,14 @@ class K8sDynamicMiner(DynamicMiner):
         pods = v1.list_pod_for_all_namespaces(watch = False)
         for pod in pods.items:
             filePath = join('/home/path', pod.metadata.name + '-' + containerName + '.json')
-            os.system('kubectl cp ' + pod.metadata.namespace + '/' + pod.metadata.name + ':' +  filePath + ' ' + info['monitoringFiles'])
+            os.system('kubectl cp ' + pod.metadata.namespace + '/' + pod.metadata.name + ':' + filePath + ' ' + info['monitoringFiles'])
 
+        files = cls._listFiles(info['monitoringFiles'])
+        for monitoringFile in files:
+            packetList = json.loads(cls._readFile(monitoringFile))
+            for packet in packetList:
+                cls._analyzePacket(packet, nodes)
+                
 
     @classmethod
     def _readFile(cls, path: str) -> str:
@@ -107,3 +115,22 @@ class K8sDynamicMiner(DynamicMiner):
             podSpec['hostname'] = hashlib.sha256(contentStr.encode('utf-8')).hexdigest()
 
         podSpec['containers'].append({'name': ''.join(c for c in imageName if c.isalnum()), 'image': imageName})
+
+    @classmethod
+    def _analyzePacket(cls, packet: dict, nodes: dict):
+        packetLayers = packet['_source']['layers']
+        srcNode, dstNode = None, None
+        if 'tcp' in packetLayers:
+            srcNodeName = packetLayers['ip']['ip.src_host']
+            if 'svc' in srcNodeName.split('.'):
+                srcNodeName = srcNodeName.split('svc')[0] + 'svc'
+            srcNode = nodes[srcNodeName]
+            dstNodeName = packetLayers['ip']['ip.dst_host']
+            if 'svc' in dstNodeName.split('.'):
+                dstNodeName = dstNodeName.split('svc')[0] + 'svc' 
+            dstNode = nodes[dstNodeName]
+            if packetLayers['tcp']['tcp.flags_tree']['tcp.flags.syn'] == '1':
+                srcNode.addEdge(dstNodeName, Direction.OUTGOING)
+                dstNode.addEdge(srcNodeName, Direction.INCOMING)
+
+        #TO-DO: Application layer types
