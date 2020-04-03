@@ -33,7 +33,7 @@ class K8sStaticMiner(StaticMiner):
         #Recupero i pods e gli endpoints
         for parsedObject in parsedObjects:
             if parsedObject and parsedObject['type'] == 'pod':
-                node = Node(parsedObject)
+                node = Node(parsedObject['name'] + '.' + parsedObject['namespace'], parsedObject)
                 imageName = parsedObject['info']['image']
                 if cls._isDatabase(imageName, info['dbImages']):
                     node.setType(NodeType.MICROTOSCA_NODES_DATABASE)
@@ -41,17 +41,17 @@ class K8sStaticMiner(StaticMiner):
                     node.setType(NodeType.MICROTOSCA_NODES_MESSAGE_ROUTER)
                     node.setIsEdge(True)
                     ingressControllers[ingressClass].append(node)
-                nodes[parsedObject['name']] = node
+                nodes[parsedObject['hostname']] = node
                 #parsedObjects.remove(parsedObject)
             elif parsedObject and parsedObject['type'] == 'endpoints':
                 for endpoint in parsedObject['info']:
-                    nodes[endpoint['name']] = Node(endpoint)
+                    nodes[endpoint['hostname']] = Node(endpoint['hostname'], endpoint)
                 #parsedObjects.remove(parsedObject)
 
         #Recupero i service
         for parsedObject in parsedObjects:
             if parsedObject and parsedObject['type'] == 'service':
-                serviceNode = Node(parsedObject)
+                serviceNode = Node(parsedObject['hostname'], parsedObject)
                 if parsedObject['info']['selector']:
                     #caso in cui il service abbia il selettore
                     for nodeName, node in nodes.items():
@@ -66,7 +66,7 @@ class K8sStaticMiner(StaticMiner):
                                 if not found:
                                     break
                             if found:
-                                node.addEdge(parsedObject['name'], Direction.INCOMING)  
+                                node.addEdge(parsedObject['hostname'], Direction.INCOMING)  
                                 serviceNode.addEdge(nodeName, Direction.OUTGOING)
                 else:
                     #caso in cui il service sia senza selettore
@@ -80,11 +80,11 @@ class K8sStaticMiner(StaticMiner):
                                         found = True
                                         break
                                 if found:
-                                    node.addEdge(parsedObject['name'], Direction.INCOMING)  
+                                    node.addEdge(parsedObject['hostname'], Direction.INCOMING)  
                                     serviceNode.addEdge(nodeName, Direction.OUTGOING)
                                     break
                 serviceNode.setType(NodeType.MICROTOSCA_NODES_MESSAGE_ROUTER)
-                nodes[parsedObject['name']] = serviceNode
+                nodes[parsedObject['hostname']] = serviceNode
                 #parsedObjects.remove(parsedObject)
 
         #Recupero gli ingress
@@ -98,9 +98,9 @@ class K8sStaticMiner(StaticMiner):
                 #lego i controllers ai services corrispondenti
                 for controller in controllerNodes:
                     for service in parsedObject['info']['services']:
-                        serviceNode = nodes[service['name']]
-                        controller.addEdge(service['name'], Direction.OUTGOING)
-                        serviceNode.addEdge(controller.getSpec()['name'], Direction.INCOMING)
+                        serviceNode = nodes[service['hostname']]
+                        controller.addEdge(service['hostname'], Direction.OUTGOING)
+                        serviceNode.addEdge(controller.getSpec()['hostname'], Direction.INCOMING)
                 parsedObjects.remove(parsedObject)
     
 

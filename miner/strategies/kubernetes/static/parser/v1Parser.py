@@ -14,6 +14,10 @@ class V1Parser(K8sParser):
         try:
             if contentDict['kind'] in workloads and 'template' in contentDict['spec']:
                 info = cls._parsePod(contentStr, contentDict['spec']['template']['metadata'], contentDict['spec']['template']['spec'])
+                if info['name'] == '':
+                    info['name'] = contentDict['metadata']['name'] if 'name' in contentDict['metadata'] else contentDict['metadata']['generateName']
+                if info['namespace'] == 'default' and 'namespace' in contentDict['metadata']:
+                    info['namespace'] = contentDict['metadata']['namespace']
             elif contentDict['kind'] == 'Pod':
                 info = cls._parsePod(contentStr, contentDict['metadata'], contentDict['spec'])
             elif contentDict['kind'] == 'Service':
@@ -30,11 +34,19 @@ class V1Parser(K8sParser):
             raise WrongFormatError('')
         podInfo = {}
         ports = []
+        namespace = 'default'
         name = ''
+        hostname = ''
+        if 'namespace' in metadata:
+            namespace = metadata['namespace']
+        if 'name' in metadata:
+            name = metadata['name']
+        elif 'generateName' in metadata:
+            name = metadata['generateName']
         if 'hostname' in spec:
-            name = spec['hostname']
+            hostname = spec['hostname']
         else:
-            name = hashlib.sha256(contentStr.encode('utf-8')).hexdigest()
+            hostname = hashlib.sha256(contentStr.encode('utf-8')).hexdigest()
         if 'labels' in metadata:
             podInfo['labels'] = metadata['labels']
         else:
@@ -47,18 +59,18 @@ class V1Parser(K8sParser):
                 portName = ''
             ports.append({'name': portName, 'number': port['containerPort']})
         podInfo['ports'] = ports
-        return {'type': 'pod', 'name': name, 'info': podInfo}
+        return {'type': 'pod', 'namespace': namespace, 'name': name, 'hostname': hostname, 'info': podInfo}
 
     @classmethod
     def _parseService(cls, metadata: dict, spec: dict) -> {}:
         namespace = 'default'
-        name = ''
+        hostname = ''
         svcInfo = {}
         svcPorts = []
         if 'namespace' in metadata:
             namespace = metadata['namespace']
         #Suppose for now that is impossibile for services to use generateName
-        name = metadata['name'] + '.' + namespace + '.svc'
+        hostname = metadata['name'] + '.' + namespace + '.svc'
         if 'selector' in spec:
             svcInfo['selector'] = spec['selector']
         else:
@@ -82,7 +94,7 @@ class V1Parser(K8sParser):
             svcInfo['type'] = spec['type']
         else:
             svcInfo['type'] = 'ClusterIP'
-        return {'type': 'service', 'name': name, 'info': svcInfo}
+        return {'type': 'service', 'hostname': hostname, 'info': svcInfo}
 
     @classmethod
     def _parseEndpoints(cls, metadata: dict, spec: dict) -> {}:
@@ -96,5 +108,5 @@ class V1Parser(K8sParser):
                     else:
                         portName = ''
                     ports.append({'name': portName, 'number': port['port']})
-                endpoints.append({'type': 'endpoint', 'name': address['hostname'], 'ip': address['ip'], 'ports': ports})
+                endpoints.append({'type': 'endpoint', 'hostname': address['hostname'], 'ip': address['ip'], 'ports': ports})
         return {'type': 'endpoints', 'info': endpoints}

@@ -10,13 +10,17 @@ class Direction(Enum):
 
 class Node:
 
-    def __init__(self, spec):
+    def __init__(self, name: str, spec: dict):
+        self.frontendName = name
         self.spec = spec
         self.type = NodeType.MICROTOSCA_NODES_SERVICE
         self.isEdge = False
         self.incomingEdges = {}
         self.outgoingEdges = {}
-        
+
+    def getFrontendName(self) -> str:
+        return self.frontendName
+
     def getSpec(self) -> dict:
         return self.spec
 
@@ -37,10 +41,10 @@ class Node:
     def addEdge(self, nodeName: str, direction: Direction, communications: Optional[List[Communication]] = [], relationshipProperties: Optional[List[RelationshipProperty]] = []):
         if not nodeName:
             raise TypeError
-
-        if direction is Direction.INCOMING:
+        
+        if direction is Direction.INCOMING and not nodeName in self.incomingEdges:
             self.incomingEdges[nodeName] = communications
-        elif direction is Direction.OUTGOING:
+        elif direction is Direction.OUTGOING and not nodeName in self.outgoingEdges:
             edge = {'properties': relationshipProperties, 'communications': communications}
             self.outgoingEdges[nodeName] = edge
         else:

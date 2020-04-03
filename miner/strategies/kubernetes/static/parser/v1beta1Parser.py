@@ -14,9 +14,15 @@ class V1beta1Parser(K8sParser):
         info = {}
         try:
             if contentDict['kind'] in workloads and 'template' in contentDict['spec']:
-                info = V1Parser._parsePod(contentStr, contentDict['spec']['template']['metadata'], contentDict['spec']['template']['spec']) 
+                info = V1Parser._parsePod(contentStr, contentDict['spec']['template']['metadata'], contentDict['spec']['template']['spec'])
+                if info['name'] == '':
+                    info['name'] = contentDict['metadata']['name'] if 'name' in contentDict['metadata'] else contentDict['metadata']['generateName']
+                if info['namespace'] == 'default' and 'namespace' in contentDict['metadata']:
+                    info['namespace'] = contentDict['metadata']['namespace']
             elif contentDict['kind'] == 'CronJob' and 'template' in (jobSpec := contentDict['spec']['jobTemplate']['spec']):
                 info = V1Parser._parsePod(contentStr, jobSpec['template']['metadata'], jobSpec['template']['spec'])
+                if info['name'] == '':
+                    info['name'] = contentDict['metadata']['name'] if 'name' in contentDict['metadata'] else contentDict['metadata']['generateName']
             elif contentDict['kind'] == 'Ingress':
                 info = cls._parseIngress(contentDict['metadata'], contentDict['spec'])
         except:
