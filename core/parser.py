@@ -14,3 +14,10 @@ class Parser:
         strategies = loader.load(Path('miner/strategies.yml'))
         
         return strategies[strategy]
+
+    @classmethod
+    def getRefinerStrategies(cls) -> dict:
+        loader = YAML(typ='safe')
+        strategies = loader.load(Path('refiner/strategies.yml'))
+        
+        return strategies

@@ -2,6 +2,7 @@ import click
 from core.parser import Parser
 from miner.generic.static.staticMinerContext import StaticMinerContext
 from miner.generic.dynamic.dynamicMinerContext import DynamicMinerContext
+from refiner.generic.refinerContext import RefinerContext
 from exporter.ymlExporter import YMLExporter
 
 @click.group()
@@ -15,7 +16,7 @@ def cli():
 @click.argument('source')
 @click.argument('target')
 @click.option('--time', default = 60, help = 'Seconds of monitoring')
-@click.option('--test', help = 'FQN module of test')
+@click.option('--test', default = '', help = 'FQN module of test')
 @click.option('--name', default = 'Generic application', help = 'Name of the microTOSCA model')
 def generate(strategy, source, target, time, test, name):
     nodes = {}
@@ -34,7 +35,10 @@ def generate(strategy, source, target, time, test, name):
             strategyConfig['dynamic']['args'] = {'test': test}
             DynamicMinerContext.doDynamicMining(strategyConfig['dynamic']['class'], source, strategyConfig['dynamic']['args'], nodes)
     
-    #REFINER
+    refinerStrategies = Parser.getRefinerStrategies()
+    if refinerStrategies:
+        print('Executing Refinement...')
+        RefinerContext.doRefinement(refinerStrategies, nodes)
 
     print('Exporting microTOSCA...')
     YMLExporter.export(nodes, target, name)
