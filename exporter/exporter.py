@@ -7,5 +7,5 @@ class Exporter(ABC):
     
     @classmethod
     @abstractmethod
-    def Export(cls, topology: List[Node], path: str, modelName: Optional[str] = 'Generic application'):
+    def export(cls, topology: dict, path: str, modelName: Optional[str] = 'Generic application'):
         pass

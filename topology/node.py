@@ -61,6 +61,12 @@ class Node:
         else:
             raise ValueError
 
+    def getCommunications(self, nodeName: str, direction: Direction):
+        if direction is Direction.INCOMING:
+            return self.incomingEdges[nodeName]
+        elif direction is Direction.OUTGOING:
+            return self.outgoingEdges[nodeName]['communications']
+
     def addRelationshipProperty(self, nodeName: str, relationshipProperty: RelationshipProperty):
         if not nodeName:
             raise TypeError
