@@ -35,13 +35,14 @@ class K8sDynamicMiner(DynamicMiner):
             for yaml in yamls:
                 contentDict = loader.load(yaml)
                 cls._prepareYaml(yaml, contentDict, info['monitoringContainer'])
-                try:
-                    utils.create_from_dict(k8sClient, contentDict)
-                except utils.FailToCreateError:
-                    raise DeploymentError('Error deploying ' + 'k8sFile')
+#                try:
+#                    utils.create_from_dict(k8sClient, contentDict)
+#                except utils.FailToCreateError:
+#                    raise DeploymentError('Error deploying ' + k8sFile)
                 with open(join(newDeploymentPath, str(i) + '.yml'), 'w') as f:
                     yamlContent = yaml.dump(contentDict)
                     f.write(yamlContent)
+                os.system('kubectl apply -f ' + join(newDeploymentPath, str(i) + '.yml'))
         
         v1 = client.CoreV1Api()
         deploymentCompleted = False
