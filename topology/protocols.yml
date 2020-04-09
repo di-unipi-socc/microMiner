@@ -1,0 +1,8 @@
+networkLayer:
+    ip: topology.protocols.IP
+transportLayer: {}
+applicationLayer:
+    amqp: topology.protocols.AMQP
+    mqtt: topology.protocols.MQTT
+    stomp: topology.protocols.STOMP
+    http: topology.protocols.HTTP
