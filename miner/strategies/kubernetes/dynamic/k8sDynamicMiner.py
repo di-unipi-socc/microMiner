@@ -1,5 +1,7 @@
 from miner.generic.dynamic.dynamicMiner import DynamicMiner
 from topology.node import Node, Direction
+from topology.communication import Communication
+from topology.concreteCommunicationFactory import ConcreteCommunicationFactory
 from .errors import WrongFolderError, DeploymentError, MonitoringError, TestError
 from os.path import isdir, isfile, join, exists
 from kubernetes import client, config, utils
@@ -25,8 +27,11 @@ class K8sDynamicMiner(DynamicMiner):
         k8sClient = client.ApiClient()
         loader = YAML(typ='safe')
         files = cls._listFiles(source)
+        newDeploymentPath = join(source, 'deploymentNew')
+        os.makedirs(newDeploymentPath)
         for k8sFile in files:
             yamls = cls._readFile(k8sFile).split('---')
+            i = 0
             for yaml in yamls:
                 contentDict = loader.load(yaml)
                 cls._prepareYaml(yaml, contentDict, info['monitoringContainer'])
@@ -34,6 +39,9 @@ class K8sDynamicMiner(DynamicMiner):
                     utils.create_from_dict(k8sClient, contentDict)
                 except utils.FailToCreateError:
                     raise DeploymentError('Error deploying ' + 'k8sFile')
+                with open(join(newDeploymentPath, str(i) + '.yml'), 'w') as f:
+                    yamlContent = yaml.dump(contentDict)
+                    f.write(yamlContent)
         
         v1 = client.CoreV1Api()
         deploymentCompleted = False
@@ -67,12 +75,13 @@ class K8sDynamicMiner(DynamicMiner):
                                                     stdout=True, tty=False)
             except ApiException as e:
                 raise MonitoringError(pod.metadata.name)
-
-        try:
-            testModule = importlib.import_module(info['test'])
-            testModule.runTest()
-        except:
-            raise TestError('')
+        
+        if info['test']:
+            try:
+                testModule = importlib.import_module(info['test'])
+                testModule.runTest()
+            except:
+                raise TestError('')
 
         time.sleep(info['time'])
 
@@ -81,11 +90,16 @@ class K8sDynamicMiner(DynamicMiner):
             filePath = join('/home/path', pod.metadata.name + '-' + containerName + '.json')
             os.system('kubectl cp ' + pod.metadata.namespace + '/' + pod.metadata.name + ':' + filePath + ' ' + info['monitoringFiles'])
 
+        files = cls._listFiles(newDeploymentPath)
+        for yamlFile in files:
+            os.system('kubectl delete -f ' + yamlFile)
+
+        commFactory = ConcreteCommunicationFactory()
         files = cls._listFiles(info['monitoringFiles'])
         for monitoringFile in files:
             packetList = json.loads(cls._readFile(monitoringFile))
             for packet in packetList:
-                cls._analyzePacket(packet, nodes)
+                cls._analyzePacket(packet, nodes, commFactory)
                 
 
     @classmethod
@@ -117,20 +131,22 @@ class K8sDynamicMiner(DynamicMiner):
         podSpec['containers'].append({'name': ''.join(c for c in imageName if c.isalnum()), 'image': imageName})
 
     @classmethod
-    def _analyzePacket(cls, packet: dict, nodes: dict):
+    def _analyzePacket(cls, packet: dict, nodes: dict, commFactory):
         packetLayers = packet['_source']['layers']
         srcNode, dstNode = None, None
-        if 'tcp' in packetLayers:
-            srcNodeName = packetLayers['ip']['ip.src_host']
-            if 'svc' in srcNodeName.split('.'):
-                srcNodeName = srcNodeName.split('svc')[0] + 'svc'
-            srcNode = nodes[srcNodeName]
-            dstNodeName = packetLayers['ip']['ip.dst_host']
-            if 'svc' in dstNodeName.split('.'):
-                dstNodeName = dstNodeName.split('svc')[0] + 'svc' 
-            dstNode = nodes[dstNodeName]
-            if packetLayers['tcp']['tcp.flags_tree']['tcp.flags.syn'] == '1':
-                srcNode.addEdge(dstNodeName, Direction.OUTGOING)
-                dstNode.addEdge(srcNodeName, Direction.INCOMING)
+        srcNodeName = packetLayers['ip']['ip.src_host']
+        if 'svc' in srcNodeName.split('.'):
+            srcNodeName = srcNodeName.split('svc')[0] + 'svc'
+        srcNode = nodes[srcNodeName]
+        dstNodeName = packetLayers['ip']['ip.dst_host']
+        if 'svc' in dstNodeName.split('.'):
+            dstNodeName = dstNodeName.split('svc')[0] + 'svc' 
+        dstNode = nodes[dstNodeName]
+        if 'tcp' in packetLayers and packetLayers['tcp']['tcp.flags_tree']['tcp.flags.syn'] == '1':
+            srcNode.addEdge(dstNodeName, Direction.OUTGOING)
+            dstNode.addEdge(srcNodeName, Direction.INCOMING)
 
-        #TO-DO: Application layer types
+        communication = commFactory.build(packet)
+        if communication:
+            srcNode.addCommunication(dstNodeName, communication, Direction.OUTGOING)
+            dstNode.addCommunication(srcNodeName, communication, Direction.INCOMING)
