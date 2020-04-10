@@ -32,17 +32,18 @@ class K8sDynamicMiner(DynamicMiner):
         for k8sFile in files:
             yamls = cls._readFile(k8sFile).split('---')
             i = 0
-            for yaml in yamls:
-                contentDict = loader.load(yaml)
-                cls._prepareYaml(yaml, contentDict, info['monitoringContainer'])
-#                try:
-#                    utils.create_from_dict(k8sClient, contentDict)
-#                except utils.FailToCreateError:
-#                    raise DeploymentError('Error deploying ' + k8sFile)
+            for contentStr in yamls:
+                contentDict = loader.load(contentStr)
+                cls._prepareYaml(contentStr, contentDict, info['monitoringContainer'])
+                try:
+                    utils.create_from_dict(k8sClient, contentDict)
+                except utils.FailToCreateError:
+                    raise DeploymentError('Error deploying ' + k8sFile)
                 with open(join(newDeploymentPath, str(i) + '.yml'), 'w') as f:
                     yamlContent = yaml.dump(contentDict)
                     f.write(yamlContent)
-                os.system('kubectl apply -f ' + join(newDeploymentPath, str(i) + '.yml'))
+                #os.system('kubectl apply -f ' + join(newDeploymentPath, str(i) + '.yml'))
+                i = i + 1
         
         v1 = client.CoreV1Api()
         deploymentCompleted = False
@@ -118,18 +119,19 @@ class K8sDynamicMiner(DynamicMiner):
     @classmethod
     def _prepareYaml(cls, contentStr: str, contentDict: dict, imageName: str):
         workloads = ['Deployment', 'ReplicaSet', 'DaemonSet', 'ReplicationController', 'StatefulSet', 'Job']
-
+        
+        podSpec = {}
         if contentDict['kind'] in workloads and 'template' in contentDict['spec']:
             podSpec = contentDict['spec']['template']['spec']
         elif contentDict['kind'] == 'CronJob' and 'template' in (jobSpec := contentDict['spec']['jobTemplate']['spec']):
             podSpec = jobSpec['template']['spec']
         elif contentDict['kind'] == 'Pod':
             podSpec = contentDict['spec']
-
-        if not 'hostname' in podSpec:
-            podSpec['hostname'] = hashlib.sha256(contentStr.encode('utf-8')).hexdigest()
-
-        podSpec['containers'].append({'name': ''.join(c for c in imageName if c.isalnum()), 'image': imageName})
+        
+        if podSpec:
+            if not 'hostname' in podSpec:
+                podSpec['hostname'] = hashlib.sha256(contentStr.encode('utf-8')).hexdigest()
+            podSpec['containers'].append({'name': ''.join(c for c in imageName if c.isalnum()), 'image': imageName})
 
     @classmethod
     def _analyzePacket(cls, packet: dict, nodes: dict, commFactory):
