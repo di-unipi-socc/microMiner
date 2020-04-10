@@ -11,5 +11,5 @@ kubernetes:
     dynamic:
         class: miner.strategies.kubernetes.dynamic.k8sDynamicMiner.K8sDynamicMiner
         args:
-            monitoringContainer: giuseppemuntoni/packet-sniffer:2.0
+            monitoringContainer: giuseppemuntoni/packet-sniffer:4.0
             monitoringFiles: miner/strategies/kubernetes/dynamic/monitoring/packets
