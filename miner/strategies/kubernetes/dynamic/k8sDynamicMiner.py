@@ -130,7 +130,7 @@ class K8sDynamicMiner(DynamicMiner):
         
         if podSpec:
             if not 'hostname' in podSpec:
-                podSpec['hostname'] = hashlib.sha256(contentStr.encode('utf-8')).hexdigest()
+                podSpec['hostname'] = hashlib.sha1(contentStr.encode('utf-8')).hexdigest()
             podSpec['containers'].append({'name': ''.join(c for c in imageName if c.isalnum()), 'image': imageName})
 
     @classmethod

@@ -1,4 +1,3 @@
-import hashlib
 from .k8sParser import K8sParser
 from .v1Parser import V1Parser
 from ..errors import WrongFormatError

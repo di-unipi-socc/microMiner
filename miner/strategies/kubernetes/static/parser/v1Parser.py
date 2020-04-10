@@ -46,7 +46,7 @@ class V1Parser(K8sParser):
         if 'hostname' in spec:
             hostname = spec['hostname']
         else:
-            hostname = hashlib.sha256(contentStr.encode('utf-8')).hexdigest()
+            hostname = hashlib.sha1(contentStr.encode('utf-8')).hexdigest()
         if 'labels' in metadata:
             podInfo['labels'] = metadata['labels']
         else:
