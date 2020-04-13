@@ -29,6 +29,8 @@ class K8sDynamicMiner(DynamicMiner):
         files = cls._listFiles(source)
         newDeploymentPath = join(source, 'deploymentNew')
         os.makedirs(newDeploymentPath)
+        
+        #Deployment of the application
         for k8sFile in files:
             yamls = cls._readFile(k8sFile).split('---')
             i = 0
@@ -42,9 +44,9 @@ class K8sDynamicMiner(DynamicMiner):
                 with open(join(newDeploymentPath, str(i) + '.yml'), 'w') as f:
                     yamlContent = yaml.dump(contentDict)
                     f.write(yamlContent)
-                #os.system('kubectl apply -f ' + join(newDeploymentPath, str(i) + '.yml'))
                 i = i + 1
         
+        #Wait until the deployment is completed
         v1 = client.CoreV1Api()
         deploymentCompleted = False
 
@@ -52,50 +54,60 @@ class K8sDynamicMiner(DynamicMiner):
             pods = v1.list_pod_for_all_namespaces(watch = False)
             deploymentCompleted = True
             for pod in pods.items:
-                if pod.status.phase != 'Running' or pod.status.phase != 'Succeeded':
-                    deploymentCompleted = False
-                    break
+                if pod.spec.hostname in nodes:
+                    if pod.status.phase != 'Running' or pod.status.phase != 'Succeeded':
+                        deploymentCompleted = False
+                        break
             if not deploymentCompleted:
-                time.sleep(10)
-            
+                time.sleep(3)
+
+        #Start monitoring   
         pods = v1.list_pod_for_all_namespaces(watch = False)
         containerName = ''.join(c for c in info['monitoringContainer'] if c.isalnum())
 
         for pod in pods.items:
-            filePath = join('/home/path', pod.metadata.name + '-' + containerName + '.json')
-            command = [
-                        '/bin/sh',
-                        '-c',
-                        'tshark -a duration:' + str(info['time']) + ' -N nNdt -T json > ' + filePath]
-            try:
-                v1.connect_get_namespaced_pod_exec(
-                                                    pod.metadata.name, 
-                                                    pod.metadata.namespace, 
-                                                    command = command, 
-                                                    container = containerName,
-                                                    stderr=True, stdin=False,
-                                                    stdout=True, tty=False)
-            except ApiException as e:
-                raise MonitoringError(pod.metadata.name)
+            if pod.spec.hostname in nodes:
+                filePath = join('/home/path', pod.metadata.name + '-' + containerName + '.json')
+                command = [
+                            './bin/sh',
+                            '-c',
+                            'tshark -a duration:' + str(info['time']) + ' -N nNdt -T json > ' + filePath]
+                try:
+                    v1.connect_get_namespaced_pod_exec(
+                                                        pod.metadata.name, 
+                                                        pod.metadata.namespace, 
+                                                        command = command, 
+                                                        container = containerName,
+                                                        stderr=True, stdin=False,
+                                                        stdout=True, tty=False)
+                except ApiException as e:
+                    raise MonitoringError(pod.metadata.name)
         
+        #Start tests
         if info['test']:
             try:
                 testModule = importlib.import_module(info['test'])
                 testModule.runTest()
             except:
                 raise TestError('')
-
+        
+        #Wait until monitoring is finished
         time.sleep(info['time'])
 
+        #Save on local host the packets
         pods = v1.list_pod_for_all_namespaces(watch = False)
         for pod in pods.items:
-            filePath = join('/home/path', pod.metadata.name + '-' + containerName + '.json')
-            os.system('kubectl cp ' + pod.metadata.namespace + '/' + pod.metadata.name + ':' + filePath + ' ' + info['monitoringFiles'])
+            if pod.spec.hostname in nodes:
+                remoteFilePath = join('/home/path', pod.metadata.name + '-' + containerName + '.json')
+                localFilePath = join(info['monitoringFiles'], pod.metadata.name + '-' + containerName + '.json')
+                os.system('kubectl cp -c ' + containerName + ' ' + pod.metadata.namespace + '/' + pod.metadata.name + ':' + remoteFilePath + ' ' + localFilePath)
 
+        #Clean the environment
         files = cls._listFiles(newDeploymentPath)
         for yamlFile in files:
             os.system('kubectl delete -f ' + yamlFile)
 
+        #Analyze the packet
         commFactory = ConcreteCommunicationFactory()
         files = cls._listFiles(info['monitoringFiles'])
         for monitoringFile in files:
