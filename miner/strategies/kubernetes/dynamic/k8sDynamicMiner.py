@@ -55,7 +55,7 @@ class K8sDynamicMiner(DynamicMiner):
             deploymentCompleted = True
             for pod in pods.items:
                 if pod.spec.hostname in nodes:
-                    if pod.status.phase != 'Running' or pod.status.phase != 'Succeeded':
+                    if pod.status.phase != 'Running' and pod.status.phase != 'Succeeded':
                         deploymentCompleted = False
                         break
             if not deploymentCompleted:
