@@ -84,6 +84,8 @@ class K8sStaticMiner(StaticMiner):
                                     serviceNode.addEdge(nodeName, Direction.OUTGOING)
                                     break
                 serviceNode.setType(NodeType.MICROTOSCA_NODES_MESSAGE_ROUTER)
+                if parsedObject['info']['type'] == 'NodePort' or parsedObject['info']['type'] == 'LoadBalancer':
+                    serviceNode.setIsEdge(True)
                 nodes[parsedObject['hostname']] = serviceNode
                 #parsedObjects.remove(parsedObject)
 
@@ -113,9 +115,9 @@ class K8sStaticMiner(StaticMiner):
     @classmethod
     def _isDatabase(cls, imageName: str, filePath: str) -> bool:
         loader = YAML(typ='safe')
-        databaseImages = loader.load(Path(filePath))
-        for databaseImage in databaseImages.values():
-            if imageName == databaseImage:
+        databaseImages = loader.load(Path(filePath))['DB']
+        for databaseImage in databaseImages:
+            if imageName == databaseImage['name']:
                 return True
         return False
         

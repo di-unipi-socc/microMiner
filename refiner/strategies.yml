@@ -3,6 +3,3 @@ message-broker:
     class: 'refiner.strategies.messageBrokerRecognizer.MessageBrokerRecognizer'
 dynamic-discovery:
     class: 'refiner.strategies.dynamicDiscoveryRecognizer.DynamicDiscoveryRecognizer'
-load-balancer:
-    class: ''
-    args: {}

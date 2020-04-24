@@ -1,8 +1,8 @@
-from ..generic.refiner import Refiner
+from refiner.generic.refiner import Refiner
 from topology.node import Node, Direction
 from topology.communication import Communication
 from topology.microToscaTypes import NodeType
-from topology.protocols import AMQP, MQTT, STOMP
+from topology.protocols import AMQP, MQTT, STOMP, IP
 
 class MessageBrokerRecognizer(Refiner):
 
@@ -51,41 +51,66 @@ class MessageBrokerRecognizer(Refiner):
     def recognize(cls, nodes: dict, args: dict):
         
         # Per ogni nodo della topologia
-        # Itero sulle comunicazioni di un nodo e controllo se c'è uno dei protocolli che supporto
+        # Itero sulle comunicazioni di un nodo e controllo se c'è uno dei applicationProtocolli che supporto
         # Se si tratta di AMQP 0.9.1, MQTT, STOMP, allora mi bastano solo gli outgoing edges
         # Se si tratta di AMQP 1.0.0 mi servono anche gli incoming edges e devo eseguire l'algoritmo
 
-        for node in nodes.values():
-            edges = node.getEdges(Direction.OUTGOING)
+        for nodeName, node in nodes.items():
             if node.getType() is NodeType.MICROTOSCA_NODES_SERVICE:
+                edges = node.getEdges(Direction.INCOMING)
+                edges.update(node.getEdges(Direction.OUTGOING))
+                isAClient = False
                 for adjacentName in edges.keys():
-                    communications = node.getCommunication(adjacentName, Direction.OUTGOING)
+                    communications = node.getCommunications(adjacentName)
                     for communication in communications:
-                        protocol = communication.getApplicationLayer()
-                        if 'amqp' in protocol and protocol['amqp'].version() == '0.9.1':
-                            classID = protocol['amqp'].getClassID()
-                            methodID = protocol['amqp'].getMethodID()
-                            if methodID in cls.AMQP[classID] and cls.AMQP[classID][methodID] == 'client':
-                                nodes[adjacentName].setType(NodeType.MICROTOSCA_NODES_MESSAGE_BROKER)
-                                break
-                            elif methodID in cls.AMQP[classID] and cls.AMQP[classID][methodID] == 'server':
+                        networkProtocol = communication.getNetworkLayer()
+                        if not 'ip' in networkProtocol:
+                            continue
+                        applicationProtocol = communication.getApplicationLayer()
+                        if 'amqp' in applicationProtocol and applicationProtocol['amqp'].getVersion() == '0.9.1':
+                            classID = applicationProtocol['amqp'].getClassID()
+                            methodID = applicationProtocol['amqp'].getMethodID()
+                            if methodID in cls.AMQP[classID] and cls.AMQP[classID][methodID] == 'client' and nodeName == networkProtocol['ip'].getReceiverHost():
                                 node.setType(NodeType.MICROTOSCA_NODES_MESSAGE_BROKER)
                                 break
-                        elif 'amqp' in protocol and protocol['amqp'].version() == '1.0.0':
+                            elif methodID in cls.AMQP[classID] and cls.AMQP[classID][methodID] == 'server' and nodeName == networkProtocol['ip'].getSenderHost():
+                                node.setType(NodeType.MICROTOSCA_NODES_MESSAGE_BROKER)
+                                break
+                            elif methodID in cls.AMQP[classID] and cls.AMQP[classID][methodID] == 'client' and nodeName == networkProtocol['ip'].getSenderHost():
+                                isAClient = True
+                                break
+                            elif methodID in cls.AMQP[classID] and cls.AMQP[classID][methodID] == 'server' and nodeName == networkProtocol['ip'].getReceiverHost():
+                                isAClient = True
+                                break
+                        elif 'amqp' in applicationProtocol and applicationProtocol['amqp'].getVersion() == '1.0.0':
                             pass
-                        elif 'mqtt' in protocol:
-                            controlPacketType = protocol['mqtt'].getControlPacketType()
-                            if controlPacketType in cls.MQTT and cls.MQTT[controlPacketType] == 'client':
-                                nodes[adjacentName].setType(NodeType.MICROTOSCA_NODES_MESSAGE_BROKER)
-                                break
-                            elif controlPacketType in cls.MQTT and cls.MQTT[controlPacketType] == 'server':
+                        elif 'mqtt' in applicationProtocol:
+                            controlPacketType = applicationProtocol['mqtt'].getControlPacketType()
+                            if controlPacketType in cls.MQTT and cls.MQTT[controlPacketType] == 'client' and nodeName == networkProtocol['ip'].getReceiverHost():
                                 node.setType(NodeType.MICROTOSCA_NODES_MESSAGE_BROKER)
                                 break
-                        elif 'stomp' in protocol:
-                            command = protocol['stomp'].getCommand()
-                            if command in cls.STOMP and cls.STOMP[command] == 'client':
-                                nodes[adjacentName].setType(NodeType.MICROTOSCA_NODES_MESSAGE_BROKER)
-                                break
-                            elif command in cls.STOMP and cls.STOMP[command] == 'server':
+                            elif controlPacketType in cls.MQTT and cls.MQTT[controlPacketType] == 'server' and nodeName == networkProtocol['ip'].getSenderHost():
                                 node.setType(NodeType.MICROTOSCA_NODES_MESSAGE_BROKER)
                                 break
+                            elif controlPacketType in cls.MQTT and cls.MQTT[controlPacketType] == 'client' and nodeName == networkProtocol['ip'].getSenderHost():
+                                isAClient = True
+                                break
+                            elif controlPacketType in cls.MQTT and cls.MQTT[controlPacketType] == 'server' and nodeName == networkProtocol['ip'].getReceiverHost():
+                                isAClient = True
+                                break
+                        elif 'stomp' in applicationProtocol:
+                            command = applicationProtocol['stomp'].getCommand()
+                            if command in cls.STOMP and cls.STOMP[command] == 'client' and nodeName == networkProtocol['ip'].getReceiverHost():
+                                node.setType(NodeType.MICROTOSCA_NODES_MESSAGE_BROKER)
+                                break
+                            elif command in cls.STOMP and cls.STOMP[command] == 'server' and nodeName == networkProtocol['ip'].getSenderHost():
+                                node.setType(NodeType.MICROTOSCA_NODES_MESSAGE_BROKER)
+                                break
+                            elif command in cls.STOMP and cls.STOMP[command] == 'client' and nodeName == networkProtocol['ip'].getSenderHost():
+                                isAClient = True
+                                break
+                            elif command in cls.STOMP and cls.STOMP[command] == 'server' and nodeName == networkProtocol['ip'].getReceiverHost():
+                                isAClient = True
+                                break
+                    if isAClient:
+                        break

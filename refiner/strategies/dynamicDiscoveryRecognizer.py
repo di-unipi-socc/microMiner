@@ -1,7 +1,7 @@
-from ..generic.refiner import Refiner
+from refiner.generic.refiner import Refiner
 from topology.communication import Communication
 from topology.node import Node, Direction
-from topology.microToscaTypes import RelationshipProperty
+from topology.microToscaTypes import NodeType, RelationshipProperty
 from topology.protocols import IP
 import ipaddress
 
@@ -12,15 +12,34 @@ class DynamicDiscoveryRecognizer(Refiner):
 
     @classmethod
     def recognize(cls, nodes: dict, args: dict):
-        for node in nodes.values():
+        for nodeName, node in nodes.items():
+            if node.getType() == NodeType.MICROTOSCA_NODES_MESSAGE_ROUTER:
+                continue
             edges = node.getEdges(Direction.OUTGOING)
             for adjacentName in edges.keys():
-                communications = node.getCommunications(adjacentName, Direction.OUTGOING)
-                ipAddress = None
+                if nodes[adjacentName].getType() == NodeType.MICROTOSCA_NODES_MESSAGE_ROUTER or not node.getIsMicroToscaEdge(adjacentName):
+                    continue
+                communications = node.getCommunications(adjacentName)
+                ipAddress = ''
                 for communication in communications:
                     protocol = communication.getNetworkLayer()
-                    if 'ip' in protocol:
-                        actualIP = protocol['ip'].getReceiverIP()
-                        if actualIP != ipAddress:
-                            node.addRelationshipProperty(adjacentName, RelationshipProperty.MICROTOSCA_RELATIONSHIPS_INTERACT_WITH_DYNAMIC_DISCOVERY_PROPERTY)
-                            break
+                    actualIP = ''
+                    '''
+                    print('senderHost: ' + protocol['ip'].getSenderHost())
+                    print('receiverHost: ' + protocol['ip'].getReceiverHost())
+                    print('nodeName: ' + nodeName)
+                    print('adjacentName: ' + adjacentName)
+                    '''
+                    if 'ip' in protocol and nodeName == protocol['ip'].getSenderHost():
+                        #print(adjacentName + '!=' + protocol['ip'].getReceiverHost())
+                        #assert adjacentName == protocol['ip'].getReceiverHost()
+                        actualIP = str(protocol['ip'].getReceiverIP())
+                    elif 'ip' in protocol and nodeName == protocol['ip'].getReceiverHost():
+                        #print(adjacentName + '!=' + protocol['ip'].getSenderHost())
+                        #assert adjacentName == protocol['ip'].getSenderHost()
+                        actualIP = str(protocol['ip'].getSenderIP())
+                    if ipAddress == '':
+                        ipAddress = actualIP
+                    elif actualIP != ipAddress:
+                        node.addRelationshipProperty(adjacentName, RelationshipProperty.MICROTOSCA_RELATIONSHIPS_INTERACT_WITH_DYNAMIC_DISCOVERY_PROPERTY)
+                        break

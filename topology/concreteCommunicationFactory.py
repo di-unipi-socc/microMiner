@@ -1,36 +1,43 @@
 from .communication import Communication
 from ruamel.yaml import YAML
 from pathlib import Path
-from errors import NoInfoError
+from .errors import NoInfoError
 
 class ConcreteCommunicationFactory:
 
     def __init__(self):
         loader = YAML(typ='safe')
-        protocols = loader.load(Path('topology/communications.yml'))
+        protocols = loader.load(Path('topology/protocols.yml'))
         self.networkLayerProtocols = protocols['networkLayer']
         self.transportLayerProtocols = protocols['transportLayer']
         self.applicationLayerProtocols = protocols['applicationLayer']
 
     def build(self, packet: dict) -> Communication:
-        networkProtocol = set(packet['_source']['layers'].keys()) & set(self.networkLayerProtocols.keys())
-        transportProtocol = set(packet['_source']['layers'].keys()) & set(self.transportLayerProtocols.keys())
-        applicationProtocol = set(packet['_source']['layers'].keys()) & set(self.applicationLayerProtocols.keys())
+        networkProtocols = set(packet['_source']['layers'].keys()) & set(self.networkLayerProtocols.keys())
+        transportProtocols = set(packet['_source']['layers'].keys()) & set(self.transportLayerProtocols.keys())
+        applicationProtocols = set(packet['_source']['layers'].keys()) & set(self.applicationLayerProtocols.keys())
+        
+        netDict, transportDict, appDict = {}, {}, {}
+        if len(networkProtocols) == 1:
+            networkProtocolName = networkProtocols.pop()
+            networkProtocolCls = self._get_class(self.networkLayerProtocols[networkProtocolName])
+            networkProtocolInstance = networkProtocolCls(packet['_source']['layers'][networkProtocolName])
+            netDict = {networkProtocolName: networkProtocolInstance}
+        if len(transportProtocols) == 1:
+            transportProtocolName = transportProtocols.pop()
+            transportProtocolCls = self._get_class(self.transportLayerProtocols[transportProtocolName])
+            transportProtocolInstance = transportProtocolCls(packet['_source']['layers'][transportProtocolName])
+            transportDict = {transportProtocolName: transportProtocolInstance}
+        if len(applicationProtocols) == 1:
+            applicationProtocolName = applicationProtocols.pop()
+            applicationProtocolCls = self._get_class(self.applicationLayerProtocols[applicationProtocolName])
+            try:
+                applicationProtocolInstance = applicationProtocolCls(packet['_source']['layers'][applicationProtocolName])
+                appDict = {applicationProtocolName: applicationProtocolInstance}
+            except(NoInfoError):
+                pass
 
-        if len(networkProtocol) != 1 or len(transportProtocol) != 1 or len(applicationProtocol) != 1:
-            raise TypeError
-
-        networkProtocolCls = self._get_class(self.networkLayerProtocols[networkProtocol])
-        transportProtocolCls = self._get_class(self.transportLayerProtocols[transportProtocol])
-        applicationProtocolCls = self._get_class(self.applicationLayerProtocols[applicationProtocol])
-
-        appProtInstance = None
-        try:
-            appProtInstance = applicationProtocolCls(packet['_source']['layers'][applicationProtocol])
-        except(NoInfoError):
-            pass
-
-        return Communication({networkProtocol: networkProtocolCls(packet['_source']['layers'][networkProtocol])}, {transportProtocol: transportProtocolCls(packet['_source']['layers'][transportProtocol])}, {applicationProtocol: appProtInstance})
+        return Communication(netDict, transportDict, appDict)
 
     
     def _get_class(self, fqnClass: str):

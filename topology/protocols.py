@@ -1,4 +1,4 @@
-from ..errors import NoInfoError
+from .errors import NoInfoError
 import ipaddress
 
 class IP:
@@ -6,12 +6,20 @@ class IP:
     def __init__(self, packet: dict):
         self.senderIP = ipaddress.ip_address(packet['ip.src'])
         self.receiverIP = ipaddress.ip_address(packet['ip.dst'])
+        self.senderHost = packet['ip.src_host']
+        self.receiverHost = packet['ip.dst_host']
 
     def getSenderIP(self) -> ipaddress:
         return self.senderIP
     
     def getReceiverIP(self) -> ipaddress:
         return self.receiverIP
+
+    def getSenderHost(self) -> str:
+        return self.senderHost
+    
+    def getReceiverHost(self) -> str:
+        return self.receiverHost
 
 
 class AMQP:

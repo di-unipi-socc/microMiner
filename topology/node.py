@@ -3,6 +3,8 @@ from typing import Optional
 from typing import List
 from .microToscaTypes import NodeType, RelationshipProperty
 from .communication import Communication
+from .errors import EdgeExistsError, EdgeNotExistsError
+import copy
 
 class Direction(Enum):
     INCOMING = 0
@@ -38,54 +40,69 @@ class Node:
     def setIsEdge(self, isEdge: bool):
         self.isEdge = isEdge
 
-    def addEdge(self, nodeName: str, direction: Direction, communications: Optional[List[Communication]] = [], relationshipProperties: Optional[List[RelationshipProperty]] = []):
-        if not nodeName:
-            raise TypeError
-        
-        if direction is Direction.INCOMING and not nodeName in self.incomingEdges:
-            self.incomingEdges[nodeName] = communications
-        elif direction is Direction.OUTGOING and not nodeName in self.outgoingEdges:
-            edge = {'properties': relationshipProperties, 'communications': communications}
-            self.outgoingEdges[nodeName] = edge
-        else:
-            raise ValueError
+    def addEdge(self, nodeName: str, direction: Direction, communications: Optional[List[Communication]] = [], relationshipProperties: Optional[List[RelationshipProperty]] = [], isMicroToscaEdge: Optional[bool] = True):
+        if direction is Direction.INCOMING:
+            if not nodeName in self.incomingEdges:
+                self.incomingEdges[nodeName] = communications
+            else:
+                raise EdgeExistsError('')
+        elif direction is Direction.OUTGOING:
+            if not nodeName in self.outgoingEdges:
+                edge = {'isMicroToscaEdge': isMicroToscaEdge, 'properties': relationshipProperties, 'communications': communications}
+                self.outgoingEdges[nodeName] = edge
+            else:
+                raise EdgeExistsError('')
 
-    def addCommunication(self, nodeName: str, communication: Communication, direction: Direction):
+    def addCommunication(self, nodeName: str, communication: Communication):
         if communication is None:
             raise TypeError
         
-        if direction is Direction.INCOMING:
+        if nodeName in self.incomingEdges:
             self.incomingEdges[nodeName].append(communication)
-        elif direction is Direction.OUTGOING:
+        if nodeName in self.outgoingEdges:
             self.outgoingEdges[nodeName]['communications'].append(communication)
-        else:
-            raise ValueError
+        elif not nodeName in self.incomingEdges and not nodeName in self.outgoingEdges:
+            raise EdgeNotExistsError('')
 
-    def getCommunications(self, nodeName: str, direction: Direction):
-        if direction is Direction.INCOMING:
-            return self.incomingEdges[nodeName]
-        elif direction is Direction.OUTGOING:
-            return self.outgoingEdges[nodeName]['communications']
+    def getCommunications(self, nodeName: str):
+        communications = []
+        if nodeName in self.incomingEdges:
+            communications.extend(self.incomingEdges[nodeName])
+        if nodeName in self.outgoingEdges:
+            communications.extend(self.outgoingEdges[nodeName]['communications'])
+        return communications
 
     def addRelationshipProperty(self, nodeName: str, relationshipProperty: RelationshipProperty):
-        if not nodeName:
-            raise TypeError
+        if not nodeName in self.outgoingEdges:
+            raise EdgeNotExistsError('')
 
         self.outgoingEdges[nodeName]['properties'].append(relationshipProperty)
 
     def getRelationshipProperties(self, nodeName: str):
-        if not nodeName:
-            raise TypeError
+        if not nodeName in self.outgoingEdges:
+            raise EdgeNotExistsError('')
 
         return self.outgoingEdges[nodeName]['properties']
+
+    def getIsMicroToscaEdge(self, nodeName: str) -> bool:
+        if not nodeName in self.outgoingEdges:
+            raise EdgeNotExistsError('')
+
+        return self.outgoingEdges[nodeName]['isMicroToscaEdge']
+    
+    def setIsMicroToscaEdge(self, nodeName: str, isMicroToscaEdge: bool):
+        if not nodeName in self.outgoingEdges:
+            raise EdgeNotExistsError('')
+
+        self.outgoingEdges[nodeName]['isMicroToscaEdge'] = isMicroToscaEdge
     
     def getEdges(self, direction: Direction) -> dict:
         if direction is Direction.INCOMING:
-            return self.incomingEdges
+            return copy.deepcopy(self.incomingEdges)
         elif direction is Direction.OUTGOING:
-            return self.outgoingEdges
+            return copy.deepcopy(self.outgoingEdges)
         else:
             raise ValueError
     
-    def dump(self) -> str:
-        return {'type': self.type, 'spec': self.spec, 'isEdge': self.isEdge, 'incomingEdges': self.incomingEdges, 'outgoingEdges': self.outgoingEdges}
+    def dump(self) -> dict:
+        return {'name': self.frontendName, 'type': self.type, 'spec': self.spec, 'isEdge': self.isEdge, 'incomingEdges': self.incomingEdges, 'outgoingEdges': self.outgoingEdges}

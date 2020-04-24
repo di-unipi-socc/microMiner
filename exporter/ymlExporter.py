@@ -30,11 +30,12 @@ class YMLExporter(Exporter):
             microToscaNode['requirements'] = []
             requirements = node.getEdges(Direction.OUTGOING)
             for requirementName, requirement in requirements.items():
-                requirementNodeName = topology[requirementName].getFrontendName()
-                if not requirement['properties']:
-                    microToscaNode['requirements'].append({'interaction': requirementNodeName})
-                else:
-                    microToscaNode['requirements'].append({'interaction': {'node': requirementNodeName, 'relationship': cls._buildYmlRelationshipProperty(requirement['properties'])}})
+                if node.getIsMicroToscaEdge(requirementName):
+                    requirementNodeName = topology[requirementName].getFrontendName()
+                    if not requirement['properties']:
+                        microToscaNode['requirements'].append({'interaction': requirementNodeName})
+                    else:
+                        microToscaNode['requirements'].append({'interaction': {'node': requirementNodeName, 'relationship': cls._buildYmlRelationshipProperty(requirement['properties'])}})
             if node.getIsEdge():
                 edgeNodes.append(nodeName)
             nodeTemplates[nodeName] = microToscaNode 
@@ -55,7 +56,7 @@ class YMLExporter(Exporter):
     def _getMetadata(cls, modelName, version="1.1"):
         metadata = dict(tosca_definitions_version=f"micro_tosca_yaml_{version}", 
                           description=modelName,
-                          imports=[{"micro": f"https://di-unipi-socc.github.io/microTOSCA/{version}/microTOSCA.yaml"}])
+                          imports=[{"micro": f'"https://di-unipi-socc.github.io/microTOSCA/{version}/microTOSCA.yaml"'}])
         return metadata
     
     @classmethod

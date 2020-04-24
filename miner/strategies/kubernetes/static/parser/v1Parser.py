@@ -63,6 +63,8 @@ class V1Parser(K8sParser):
 
     @classmethod
     def _parseService(cls, metadata: dict, spec: dict) -> {}:
+        if 'clusterIP' in spec and spec['clusterIP'] == 'None':
+            return {}
         namespace = 'default'
         hostname = ''
         svcInfo = {}

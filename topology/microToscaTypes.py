@@ -8,10 +8,6 @@ class NodeType(Enum):
     MICROTOSCA_NODES_MESSAGE_BROKER = 'micro.nodes.MessageBroker'
     MICROTOSCA_NODES_MESSAGE_ROUTER = 'micro.nodes.MessageRouter'
 
-    MICROTOSCA_NODES_MESSAGE_ROUTER_KINGRESS = 'micro.nodes.MessageRouter.KIngress'
-    MICROTOSCA_NODES_MESSAGE_ROUTER_KSERVICE = 'micro.nodes.MessageRouter.KService'
-    MICROTOSCA_NODES_MESSAGE_ROUTER_KPROXY = 'micro.nodes.MessageRouter.KProxy'
-
 class RelationshipProperty(Enum):
 
     MICROTOSCA_RELATIONSHIPS_INTERACT_WITH = 'micro.relationships.InteractsWith'

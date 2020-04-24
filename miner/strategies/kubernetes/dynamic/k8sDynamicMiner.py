@@ -1,15 +1,22 @@
 from miner.generic.dynamic.dynamicMiner import DynamicMiner
 from topology.node import Node, Direction
 from topology.communication import Communication
+from topology.communicationFactory import CommunicationFactory
 from topology.concreteCommunicationFactory import ConcreteCommunicationFactory
+from topology.microToscaTypes import NodeType
+from topology.errors import EdgeExistsError, EdgeNotExistsError
 from .errors import WrongFolderError, DeploymentError, MonitoringError, TestError
 from os.path import isdir, isfile, join, exists
 from kubernetes import client, config, utils
+from kubernetes.client import configuration
 from kubernetes.client.rest import ApiException
+from kubernetes.stream import stream
 from os import listdir
 from ruamel import yaml
 from ruamel.yaml import YAML
 from pathlib import Path
+from typing import Type
+import shutil
 import importlib
 import json
 import hashlib
@@ -24,6 +31,7 @@ class K8sDynamicMiner(DynamicMiner):
     @classmethod
     def updateTopology(cls, source: str, info: dict, nodes: dict):
         config.load_kube_config()
+        configuration.assert_hostname = False
         k8sClient = client.ApiClient()
         loader = YAML(typ='safe')
         files = cls._listFiles(source)
@@ -31,6 +39,7 @@ class K8sDynamicMiner(DynamicMiner):
         os.makedirs(newDeploymentPath)
         
         #Deployment of the application
+        print('   Deploying the application...')
         for k8sFile in files:
             yamls = cls._readFile(k8sFile).split('---')
             i = 0
@@ -60,30 +69,33 @@ class K8sDynamicMiner(DynamicMiner):
                         break
             if not deploymentCompleted:
                 time.sleep(3)
+        time.sleep(10)
+        print('   Deployment completed')        
 
-        #Start monitoring   
+        #Start monitoring
+        print('   Monitoring in progress...')   
         pods = v1.list_pod_for_all_namespaces(watch = False)
         containerName = ''.join(c for c in info['monitoringContainer'] if c.isalnum())
-
         for pod in pods.items:
             if pod.spec.hostname in nodes:
-                filePath = join('/home/path', pod.metadata.name + '-' + containerName + '.json')
+                filePath = join('/home/dump', pod.spec.hostname + '.json')
                 command = [
                             './bin/sh',
                             '-c',
-                            'tshark -a duration:' + str(info['time']) + ' -N nNdt -T json > ' + filePath]
+                            'tshark -i eth0 -a duration:' + str(info['time']) + ' -N nNdt -T json > ' + filePath + ' 2>/dev/null &']
                 try:
-                    v1.connect_get_namespaced_pod_exec(
+                    resp = stream(v1.connect_get_namespaced_pod_exec,
                                                         pod.metadata.name, 
                                                         pod.metadata.namespace, 
                                                         command = command, 
                                                         container = containerName,
-                                                        stderr=True, stdin=False,
+                                                        stderr=False, stdin=False,
                                                         stdout=True, tty=False)
                 except ApiException as e:
                     raise MonitoringError(pod.metadata.name)
         
         #Start tests
+        time.sleep(0.5)
         if info['test']:
             try:
                 testModule = importlib.import_module(info['test'])
@@ -93,28 +105,52 @@ class K8sDynamicMiner(DynamicMiner):
         
         #Wait until monitoring is finished
         time.sleep(info['time'])
+        print('   Monitoring completed')
 
         #Save on local host the packets
         pods = v1.list_pod_for_all_namespaces(watch = False)
         for pod in pods.items:
             if pod.spec.hostname in nodes:
-                remoteFilePath = join('/home/path', pod.metadata.name + '-' + containerName + '.json')
-                localFilePath = join(info['monitoringFiles'], pod.metadata.name + '-' + containerName + '.json')
+                remoteFilePath = join('home/dump', pod.spec.hostname + '.json')
+                localFilePath = join(info['monitoringFiles'], pod.spec.hostname + '.json')
                 os.system('kubectl cp -c ' + containerName + ' ' + pod.metadata.namespace + '/' + pod.metadata.name + ':' + remoteFilePath + ' ' + localFilePath)
-
-        #Clean the environment
-        files = cls._listFiles(newDeploymentPath)
-        for yamlFile in files:
-            os.system('kubectl delete -f ' + yamlFile)
-
-        #Analyze the packet
-        commFactory = ConcreteCommunicationFactory()
+        
+        #Create edges
         files = cls._listFiles(info['monitoringFiles'])
         for monitoringFile in files:
-            packetList = json.loads(cls._readFile(monitoringFile))
-            for packet in packetList:
-                cls._analyzePacket(packet, nodes, commFactory)
-                
+            srcNodeName = monitoringFile.split('/')[-1].replace('.json', '')
+            fileContent = cls._readFile(monitoringFile)
+            if fileContent:
+                packetList = json.loads(fileContent)
+                for packet in packetList:
+                    if cls._isOutgoingPacket(packet, nodes, srcNodeName):
+                        cls._createEdge(packet, nodes, srcNodeName)
+        
+        dump = {}
+        for nodeName, node in nodes.items():
+            dump[nodeName] = node.dump()
+        with open('./dump.yml', 'w') as f:
+            dumpContent = yaml.dump(dump)
+            f.write(dumpContent)
+        
+        #Create communications
+        commFactory = ConcreteCommunicationFactory()
+        for monitoringFile in files:
+            srcNodeName = monitoringFile.split('/')[-1].replace('.json', '')
+            fileContent = cls._readFile(monitoringFile)
+            #os.system('rm ' + monitoringFile)
+            if fileContent:
+                packetList = json.loads(fileContent)
+                for packet in packetList:
+                    if cls._isOutgoingPacket(packet, nodes, srcNodeName):
+                        cls._createCommunication(packet, nodes, commFactory, srcNodeName)
+        
+        #Clean the environment
+        print('   Cleaning the environment...')
+        files = cls._listFiles(newDeploymentPath)
+        for yamlFile in files:
+            os.system('kubectl delete -f ' + yamlFile + ' 1>/dev/null 2>/dev/null')
+        shutil.rmtree(newDeploymentPath)
 
     @classmethod
     def _readFile(cls, path: str) -> str:
@@ -143,25 +179,103 @@ class K8sDynamicMiner(DynamicMiner):
         if podSpec:
             if not 'hostname' in podSpec:
                 podSpec['hostname'] = hashlib.sha1(contentStr.encode('utf-8')).hexdigest()
+            print(contentDict['metadata']['name'] + ':' + podSpec['hostname'])
             podSpec['containers'].append({'name': ''.join(c for c in imageName if c.isalnum()), 'image': imageName})
 
     @classmethod
-    def _analyzePacket(cls, packet: dict, nodes: dict, commFactory):
+    def _isOutgoingPacket(cls, packet: dict, nodes: dict, srcNodeName: str) -> bool:
         packetLayers = packet['_source']['layers']
-        srcNode, dstNode = None, None
-        srcNodeName = packetLayers['ip']['ip.src_host']
-        if 'svc' in srcNodeName.split('.'):
-            srcNodeName = srcNodeName.split('svc')[0] + 'svc'
-        srcNode = nodes[srcNodeName]
+        if not 'ip' in packetLayers:
+            return False
+        packetSrc = packetLayers['ip']['ip.src_host']
+        if 'svc' in packetSrc.split('.'):
+            return False
+        if packetSrc != srcNodeName:
+            return False
+        
+        return True
+
+    @classmethod
+    def _getPodHostname(cls, ip: str) -> str:
+        v1 = client.CoreV1Api()
+        pods = v1.list_pod_for_all_namespaces(watch = False)
+        for pod in pods.items:
+            if pod.status.pod_ip == ip:
+                return pod.spec.hostname
+        return ''
+
+    @classmethod
+    def _getDstNode(cls, packet: dict, nodes: dict) -> (str, Node):
+        packetLayers = packet['_source']['layers']
+        if not 'ip' in packetLayers:
+            return ('', None)
         dstNodeName = packetLayers['ip']['ip.dst_host']
         if 'svc' in dstNodeName.split('.'):
-            dstNodeName = dstNodeName.split('svc')[0] + 'svc' 
-        dstNode = nodes[dstNodeName]
-        if 'tcp' in packetLayers and packetLayers['tcp']['tcp.flags_tree']['tcp.flags.syn'] == '1':
-            srcNode.addEdge(dstNodeName, Direction.OUTGOING)
-            dstNode.addEdge(srcNodeName, Direction.INCOMING)
+            dstNodeName = dstNodeName.split('.svc.')[0] + '.svc'
+        if not dstNodeName in nodes:
+            dstNodeName = cls._getPodHostname(packetLayers['ip']['ip.dst'])
+            #print(dstNodeName)
+        if not dstNodeName in nodes:
+            return ('', None)
 
+        return (dstNodeName, nodes[dstNodeName])
+
+    @classmethod
+    def _createEdge(cls, packet: dict, nodes: dict, srcNodeName: str):
+        packetLayers = packet['_source']['layers']
+        srcNode = nodes[srcNodeName]
+        dst = cls._getDstNode(packet, nodes)
+        dstNodeName = dst[0]
+        dstNode = dst[1]
+        if not dstNodeName:
+            return
+        dstIsService = dstNode.getType() == NodeType.MICROTOSCA_NODES_MESSAGE_ROUTER
+        if ('tcp' in packetLayers and packetLayers['tcp']['tcp.flags_tree']['tcp.flags.syn'] == '1' and packetLayers['tcp']['tcp.flags_tree']['tcp.flags.ack'] == '0') or (dstIsService):
+            try:
+                srcNode.addEdge(dstNodeName, Direction.OUTGOING)
+                dstNode.addEdge(srcNodeName, Direction.INCOMING)
+            except EdgeExistsError:
+                srcNode.setIsMicroToscaEdge(dstNodeName, True)
+        if dstIsService:
+            edges = dstNode.getEdges(Direction.OUTGOING)
+            for adjacentName in edges.keys():
+                if nodes[adjacentName].getType() == NodeType.MICROTOSCA_NODES_MESSAGE_ROUTER:
+                    continue
+                try:
+                    nodes[adjacentName].addEdge(srcNodeName, Direction.OUTGOING, isMicroToscaEdge = False)
+                    srcNode.addEdge(adjacentName, Direction.INCOMING)
+                except EdgeExistsError:
+                    pass
+
+    @classmethod
+    def _createCommunication(cls, packet: dict, nodes: dict, commFactory: Type[CommunicationFactory], srcNodeName: str):
+        srcNode = nodes[srcNodeName]
+        dst = cls._getDstNode(packet, nodes)
+        dstNodeName = dst[0]
+        dstNode = dst[1]
+        if not dstNodeName:
+            return
+        #print(dstNodeName + '==' + dstNode.getFrontendName())
+        packet['_source']['layers']['ip']['ip.dst_host'] = dstNodeName
+        dstIsService = dstNode.getType() == NodeType.MICROTOSCA_NODES_MESSAGE_ROUTER
         communication = commFactory.build(packet)
         if communication:
-            srcNode.addCommunication(dstNodeName, communication, Direction.OUTGOING)
-            dstNode.addCommunication(srcNodeName, communication, Direction.INCOMING)
+            try:
+                srcNode.addCommunication(dstNodeName, communication)
+                dstNode.addCommunication(srcNodeName, communication)
+            except EdgeNotExistsError:
+                print('not exist edge: ' + srcNodeName + '-> ' + dstNodeName)
+                pass
+        
+        if dstIsService:
+            packet['_source']['layers']['ip']['ip.src_host'] = dstNodeName
+            edges = dstNode.getEdges(Direction.OUTGOING)
+            for adjacentName in edges.keys():
+                packet['_source']['layers']['ip']['ip.dst_host'] = adjacentName
+                communication = commFactory.build(packet)
+                if communication:
+                    try:
+                        dstNode.addCommunication(adjacentName, communication)
+                        nodes[adjacentName].addCommunication(dstNodeName, communication)
+                    except EdgeNotExistsError:
+                        pass
