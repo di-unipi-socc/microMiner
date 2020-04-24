@@ -7,6 +7,9 @@ metadata:
   namespace: sock-shop
 spec:
   replicas: 1
+  selector:
+    matchLabels:
+      name: carts-db
   template:
     metadata:
       labels:
@@ -26,7 +29,7 @@ spec:
               - CHOWN
               - SETGID
               - SETUID
-          readOnlyRootFilesystem: true
+          readOnlyRootFilesystem: true            
         volumeMounts:
         - mountPath: /tmp
           name: tmp-volume
@@ -61,6 +64,9 @@ metadata:
   namespace: sock-shop
 spec:
   replicas: 1
+  selector:
+    matchLabels:
+      name: carts
   template:
     metadata:
       labels:
@@ -119,6 +125,9 @@ metadata:
   namespace: sock-shop
 spec:
   replicas: 1
+  selector:
+    matchLabels:
+      name: catalogue-db
   template:
     metadata:
       labels:
@@ -162,6 +171,9 @@ metadata:
   namespace: sock-shop
 spec:
   replicas: 1
+  selector:
+    matchLabels:
+      name: catalogue
   template:
     metadata:
       labels:
@@ -206,6 +218,9 @@ metadata:
   namespace: sock-shop
 spec:
   replicas: 1
+  selector:
+    matchLabels:
+      name: front-end
   template:
     metadata:
       labels:
@@ -255,6 +270,9 @@ metadata:
   namespace: sock-shop
 spec:
   replicas: 1
+  selector:
+    matchLabels:
+      name: orders-db
   template:
     metadata:
       labels:
@@ -309,6 +327,9 @@ metadata:
   namespace: sock-shop
 spec:
   replicas: 1
+  selector:
+    matchLabels:
+      name: orders
   template:
     metadata:
       labels:
@@ -367,6 +388,9 @@ metadata:
   namespace: sock-shop
 spec:
   replicas: 1
+  selector:
+    matchLabels:
+      name: payment
   template:
     metadata:
       labels:
@@ -413,6 +437,9 @@ metadata:
   namespace: sock-shop
 spec:
   replicas: 1
+  selector:
+    matchLabels:
+      name: queue-master
   template:
     metadata:
       labels:
@@ -452,6 +479,9 @@ metadata:
   namespace: sock-shop
 spec:
   replicas: 1
+  selector:
+    matchLabels:
+      name: rabbitmq
   template:
     metadata:
       labels:
@@ -499,6 +529,9 @@ metadata:
   namespace: sock-shop
 spec:
   replicas: 1
+  selector:
+    matchLabels:
+      name: shipping
   template:
     metadata:
       labels:
@@ -557,6 +590,9 @@ metadata:
   namespace: sock-shop
 spec:
   replicas: 1
+  selector:
+    matchLabels:
+      name: user-db
   template:
     metadata:
       labels:
@@ -611,6 +647,9 @@ metadata:
   namespace: sock-shop
 spec:
   replicas: 1
+  selector:
+    matchLabels:
+      name: user
   template:
     metadata:
       labels:

@@ -1,18 +1,22 @@
 description: Generic application
 imports:
-- {micro: https://di-unipi-socc.github.io/microTOSCA/1.1/microTOSCA.yaml}
+- {micro: '"https://di-unipi-socc.github.io/microTOSCA/1.1/microTOSCA.yaml"'}
 topology_template:
-  groups: {}
+  groups:
+    edge:
+      members: [front-end.sock-shop.svc]
+      type: micro.groups.Edge
   node_templates:
     carts-db.sock-shop:
       requirements: []
-      type: micro.nodes.Service
+      type: micro.nodes.Datastore
     carts-db.sock-shop.svc:
       requirements:
       - {interaction: carts-db.sock-shop}
       type: micro.nodes.MessageRouter
     carts.sock-shop:
-      requirements: []
+      requirements:
+      - {interaction: carts-db.sock-shop.svc}
       type: micro.nodes.Service
     carts.sock-shop.svc:
       requirements:
@@ -26,14 +30,19 @@ topology_template:
       - {interaction: catalogue-db.sock-shop}
       type: micro.nodes.MessageRouter
     catalogue.sock-shop:
-      requirements: []
+      requirements:
+      - {interaction: catalogue-db.sock-shop.svc}
       type: micro.nodes.Service
     catalogue.sock-shop.svc:
       requirements:
       - {interaction: catalogue.sock-shop}
       type: micro.nodes.MessageRouter
     front-end.sock-shop:
-      requirements: []
+      requirements:
+      - {interaction: catalogue.sock-shop.svc}
+      - {interaction: user.sock-shop.svc}
+      - {interaction: carts.sock-shop.svc}
+      - {interaction: orders.sock-shop.svc}
       type: micro.nodes.Service
     front-end.sock-shop.svc:
       requirements:
@@ -41,13 +50,14 @@ topology_template:
       type: micro.nodes.MessageRouter
     orders-db.sock-shop:
       requirements: []
-      type: micro.nodes.Service
+      type: micro.nodes.Datastore
     orders-db.sock-shop.svc:
       requirements:
       - {interaction: orders-db.sock-shop}
       type: micro.nodes.MessageRouter
     orders.sock-shop:
-      requirements: []
+      requirements:
+      - {interaction: orders-db.sock-shop.svc}
       type: micro.nodes.Service
     orders.sock-shop.svc:
       requirements:
@@ -61,7 +71,8 @@ topology_template:
       - {interaction: payment.sock-shop}
       type: micro.nodes.MessageRouter
     queue-master.sock-shop:
-      requirements: []
+      requirements:
+      - {interaction: rabbitmq.sock-shop.svc}
       type: micro.nodes.Service
     queue-master.sock-shop.svc:
       requirements:
@@ -69,7 +80,7 @@ topology_template:
       type: micro.nodes.MessageRouter
     rabbitmq.sock-shop:
       requirements: []
-      type: micro.nodes.Service
+      type: micro.nodes.MessageBroker
     rabbitmq.sock-shop.svc:
       requirements:
       - {interaction: rabbitmq.sock-shop}
@@ -89,7 +100,8 @@ topology_template:
       - {interaction: user-db.sock-shop}
       type: micro.nodes.MessageRouter
     user.sock-shop:
-      requirements: []
+      requirements:
+      - {interaction: user-db.sock-shop.svc}
       type: micro.nodes.Service
     user.sock-shop.svc:
       requirements:
