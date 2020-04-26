@@ -1,4 +1,5 @@
 import click
+import logging
 from core.parser import Parser
 from miner.generic.static.staticMinerContext import StaticMinerContext
 from miner.generic.dynamic.dynamicMinerContext import DynamicMinerContext
@@ -44,4 +45,5 @@ def generate(strategy, source, target, time, test, name):
     YMLExporter.export(nodes, target, name)
 
 if __name__ == "__main__":
+    logging.basicConfig(filename = 'archMiner.log', filemode = 'w', level = logging.DEBUG)
     cli()
