@@ -21,34 +21,34 @@ class Node:
         self.outgoingEdges = {}
 
     def getFrontendName(self) -> str:
-        return self.frontendName
+        return copy.copy(self.frontendName)
 
     def getSpec(self) -> dict:
-        return self.spec
+        return copy.deepcopy(self.spec)
 
     def getType(self) -> NodeType:
-        return self.type
+        return copy.deepcopy(self.type)
 
     def setType(self, nodeType: NodeType):
         if nodeType is None:
             raise TypeError
-        self.type = nodeType
+        self.type = copy.deepcopy(nodeType)
     
     def getIsEdge(self) -> bool:
-        return self.isEdge
+        return copy.copy(self.isEdge)
     
     def setIsEdge(self, isEdge: bool):
-        self.isEdge = isEdge
+        self.isEdge = copy.copy(isEdge)
 
     def addEdge(self, nodeName: str, direction: Direction, communications: Optional[List[Communication]] = [], relationshipProperties: Optional[List[RelationshipProperty]] = [], isMicroToscaEdge: Optional[bool] = True):
         if direction is Direction.INCOMING:
             if not nodeName in self.incomingEdges:
-                self.incomingEdges[nodeName] = communications
+                self.incomingEdges[nodeName] = copy.deepcopy(communications)
             else:
                 raise EdgeExistsError('')
         elif direction is Direction.OUTGOING:
             if not nodeName in self.outgoingEdges:
-                edge = {'isMicroToscaEdge': isMicroToscaEdge, 'properties': relationshipProperties, 'communications': communications}
+                edge = {'isMicroToscaEdge': copy.copy(isMicroToscaEdge), 'properties': copy.deepcopy(relationshipProperties), 'communications': copy.deepcopy(communications)}
                 self.outgoingEdges[nodeName] = edge
             else:
                 raise EdgeExistsError('')
@@ -58,9 +58,9 @@ class Node:
             raise TypeError
         
         if nodeName in self.incomingEdges:
-            self.incomingEdges[nodeName].append(communication)
+            self.incomingEdges[nodeName].append(copy.deepcopy(communication))
         if nodeName in self.outgoingEdges:
-            self.outgoingEdges[nodeName]['communications'].append(communication)
+            self.outgoingEdges[nodeName]['communications'].append(copy.deepcopy(communication))
         elif not nodeName in self.incomingEdges and not nodeName in self.outgoingEdges:
             raise EdgeNotExistsError('')
 
@@ -70,31 +70,31 @@ class Node:
             communications.extend(self.incomingEdges[nodeName])
         if nodeName in self.outgoingEdges:
             communications.extend(self.outgoingEdges[nodeName]['communications'])
-        return communications
+        return copy.deepcopy(communications)
 
     def addRelationshipProperty(self, nodeName: str, relationshipProperty: RelationshipProperty):
         if not nodeName in self.outgoingEdges:
             raise EdgeNotExistsError('')
 
-        self.outgoingEdges[nodeName]['properties'].append(relationshipProperty)
+        self.outgoingEdges[nodeName]['properties'].append(copy.deepcopy(relationshipProperty))
 
     def getRelationshipProperties(self, nodeName: str):
         if not nodeName in self.outgoingEdges:
             raise EdgeNotExistsError('')
 
-        return self.outgoingEdges[nodeName]['properties']
+        return copy.deepcopy(self.outgoingEdges[nodeName]['properties'])
 
     def getIsMicroToscaEdge(self, nodeName: str) -> bool:
         if not nodeName in self.outgoingEdges:
             raise EdgeNotExistsError('')
 
-        return self.outgoingEdges[nodeName]['isMicroToscaEdge']
+        return copy.copy(self.outgoingEdges[nodeName]['isMicroToscaEdge'])
     
     def setIsMicroToscaEdge(self, nodeName: str, isMicroToscaEdge: bool):
         if not nodeName in self.outgoingEdges:
             raise EdgeNotExistsError('')
 
-        self.outgoingEdges[nodeName]['isMicroToscaEdge'] = isMicroToscaEdge
+        self.outgoingEdges[nodeName]['isMicroToscaEdge'] = copy.copy(isMicroToscaEdge)
     
     def getEdges(self, direction: Direction) -> dict:
         if direction is Direction.INCOMING:
