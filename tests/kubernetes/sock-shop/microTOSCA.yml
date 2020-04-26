@@ -1,4 +1,4 @@
-description: Generic application
+description: Sock-shop
 imports:
 - {micro: '"https://di-unipi-socc.github.io/microTOSCA/1.1/microTOSCA.yaml"'}
 topology_template:
@@ -58,6 +58,10 @@ topology_template:
     orders.sock-shop:
       requirements:
       - {interaction: orders-db.sock-shop.svc}
+      - {interaction: carts.sock-shop.svc}
+      - {interaction: user.sock-shop.svc}
+      - {interaction: payment.sock-shop.svc}
+      - {interaction: shipping.sock-shop.svc}
       type: micro.nodes.Service
     orders.sock-shop.svc:
       requirements:
@@ -86,7 +90,8 @@ topology_template:
       - {interaction: rabbitmq.sock-shop}
       type: micro.nodes.MessageRouter
     shipping.sock-shop:
-      requirements: []
+      requirements:
+      - {interaction: rabbitmq.sock-shop.svc}
       type: micro.nodes.Service
     shipping.sock-shop.svc:
       requirements:
