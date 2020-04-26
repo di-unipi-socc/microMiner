@@ -13,3 +13,4 @@ kubernetes:
         args:
             monitoringContainer: giuseppemuntoni/packet-sniffer:5.0
             monitoringFiles: miner/strategies/kubernetes/dynamic/monitoring/packets
+            modDeploymentFiles: miner/strategies/kubernetes/dynamic/modDeployment
