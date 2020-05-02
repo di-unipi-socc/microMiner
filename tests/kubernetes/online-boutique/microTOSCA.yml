@@ -1,0 +1,132 @@
+description: online-boutique
+imports:
+- {micro: '"https://di-unipi-socc.github.io/microTOSCA/1.1/microTOSCA.yaml"'}
+topology_template:
+  groups:
+    edge:
+      members: [frontend-external.default.svc]
+      type: micro.groups.Edge
+  node_templates:
+    adservice.default:
+      requirements: []
+      type: micro.nodes.Service
+    adservice.default.svc:
+      requirements:
+      - {interaction: adservice.default}
+      type: micro.nodes.MessageRouter
+    cartservice.default:
+      requirements:
+      - {interaction: redis-cart.default.svc}
+      type: micro.nodes.Service
+    cartservice.default.svc:
+      requirements:
+      - {interaction: cartservice.default}
+      type: micro.nodes.MessageRouter
+    checkoutservice.default:
+      requirements:
+      - {interaction: cartservice.default.svc}
+      - {interaction: productcatalogservice.default.svc}
+      - {interaction: currencyservice.default.svc}
+      - {interaction: shippingservice.default.svc}
+      - {interaction: paymentservice.default.svc}
+      - {interaction: emailservice.default.svc}
+      type: micro.nodes.Service
+    checkoutservice.default.svc:
+      requirements:
+      - {interaction: checkoutservice.default}
+      type: micro.nodes.MessageRouter
+    currencyservice.default:
+      requirements: []
+      type: micro.nodes.Service
+    currencyservice.default.svc:
+      requirements:
+      - {interaction: currencyservice.default}
+      type: micro.nodes.MessageRouter
+    emailservice.default:
+      requirements: []
+      type: micro.nodes.Service
+    emailservice.default.svc:
+      requirements:
+      - {interaction: emailservice.default}
+      type: micro.nodes.MessageRouter
+    frontend-external.default.svc:
+      requirements:
+      - {interaction: frontend.default}
+      type: micro.nodes.MessageRouter
+    frontend.default:
+      requirements:
+      - {interaction: cartservice.default.svc}
+      - {interaction: adservice.default.svc}
+      - {interaction: currencyservice.default.svc}
+      - {interaction: productcatalogservice.default.svc}
+      - {interaction: recommendationservice.default.svc}
+      - {interaction: shippingservice.default.svc}
+      - {interaction: checkoutservice.default.svc}
+      type: micro.nodes.Service
+    frontend.default.svc:
+      requirements:
+      - {interaction: frontend.default}
+      type: micro.nodes.MessageRouter
+    loadgenerator.default:
+      requirements:
+      - {interaction: frontend.default.svc}
+      type: micro.nodes.Service
+    paymentservice.default:
+      requirements: []
+      type: micro.nodes.Service
+    paymentservice.default.svc:
+      requirements:
+      - {interaction: paymentservice.default}
+      type: micro.nodes.MessageRouter
+    productcatalogservice.default:
+      requirements: []
+      type: micro.nodes.Service
+    productcatalogservice.default.svc:
+      requirements:
+      - {interaction: productcatalogservice.default}
+      type: micro.nodes.MessageRouter
+    recommendationservice.default:
+      requirements:
+      - {interaction: productcatalogservice.default.svc}
+      type: micro.nodes.Service
+    recommendationservice.default.svc:
+      requirements:
+      - {interaction: recommendationservice.default}
+      type: micro.nodes.MessageRouter
+    redis-cart.default:
+      requirements: []
+      type: micro.nodes.Datastore
+    redis-cart.default.svc:
+      requirements:
+      - {interaction: redis-cart.default}
+      type: micro.nodes.MessageRouter
+    shippingservice.default:
+      requirements: []
+      type: micro.nodes.Service
+    shippingservice.default.svc:
+      requirements:
+      - {interaction: shippingservice.default}
+      type: micro.nodes.MessageRouter
+  relationship_templates:
+    c:
+      properties: {circuit_breaker: true}
+      type: micro.relationships.InteractsWith
+    cd:
+      properties: {circuit_breaker: true, dynamic_discovery: true}
+      type: micro.relationships.InteractsWith
+    d:
+      properties: {dynamic_discovery: true}
+      type: micro.relationships.InteractsWith
+    t:
+      properties: {timeout: true}
+      type: micro.relationships.InteractsWith
+    tc:
+      properties: {circuit_breaker: true, timeout: true}
+      type: micro.relationships.InteractsWith
+    tcd:
+      properties: {circuit_breaker: true, dynamic_discovery: true, timeout: true}
+      type: micro.relationships.InteractsWith
+    td:
+      properties: {dynamic_discovery: true, timeout: true}
+      type: micro.relationships.InteractsWith
+tosca_definitions_version: micro_tosca_yaml_1.1
