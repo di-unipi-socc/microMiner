@@ -1,0 +1,130 @@
+description: robot-shop
+imports:
+- {micro: '"https://di-unipi-socc.github.io/microTOSCA/1.1/microTOSCA.yaml"'}
+topology_template:
+  groups:
+    edge:
+      members: [web.default.svc]
+      type: micro.groups.Edge
+  node_templates:
+    cart.default:
+      requirements:
+      - {interaction: redis.default.svc}
+      - {interaction: catalogue.default.svc}
+      type: micro.nodes.Service
+    cart.default.svc:
+      requirements:
+      - {interaction: cart.default}
+      type: micro.nodes.MessageRouter
+    catalogue.default:
+      requirements: []
+      type: micro.nodes.Service
+    catalogue.default.svc:
+      requirements:
+      - {interaction: catalogue.default}
+      type: micro.nodes.MessageRouter
+    dispatch.default:
+      requirements:
+      - {interaction: rabbitmq.default.svc}
+      type: micro.nodes.Service
+    load.default:
+      requirements:
+      - {interaction: web.default.svc}
+      type: micro.nodes.Service
+    mongodb.default:
+      requirements: []
+      type: micro.nodes.Service
+    mongodb.default.svc:
+      requirements:
+      - {interaction: mongodb.default}
+      type: micro.nodes.MessageRouter
+    mysql.default:
+      requirements: []
+      type: micro.nodes.Service
+    mysql.default.svc:
+      requirements:
+      - {interaction: mysql.default}
+      type: micro.nodes.MessageRouter
+    payment.default:
+      requirements:
+      - {interaction: user.default.svc}
+      type: micro.nodes.Service
+    payment.default.svc:
+      requirements:
+      - {interaction: payment.default}
+      type: micro.nodes.MessageRouter
+    rabbitmq.default:
+      requirements: []
+      type: micro.nodes.Service
+    rabbitmq.default.svc:
+      requirements:
+      - {interaction: rabbitmq.default}
+      type: micro.nodes.MessageRouter
+    ratings.default:
+      requirements:
+      - {interaction: catalogue.default.svc}
+      - {interaction: mysql.default.svc}
+      type: micro.nodes.Service
+    ratings.default.svc:
+      requirements:
+      - {interaction: ratings.default}
+      type: micro.nodes.MessageRouter
+    redis.default:
+      requirements: []
+      type: micro.nodes.Datastore
+    redis.default.svc:
+      requirements:
+      - {interaction: redis.default}
+      type: micro.nodes.MessageRouter
+    shipping.default:
+      requirements:
+      - {interaction: mysql.default.svc}
+      - {interaction: cart.default.svc}
+      type: micro.nodes.Service
+    shipping.default.svc:
+      requirements:
+      - {interaction: shipping.default}
+      type: micro.nodes.MessageRouter
+    user.default:
+      requirements: []
+      type: micro.nodes.Service
+    user.default.svc:
+      requirements:
+      - {interaction: user.default}
+      type: micro.nodes.MessageRouter
+    web.default:
+      requirements:
+      - {interaction: user.default.svc}
+      - {interaction: payment.default.svc}
+      - {interaction: shipping.default.svc}
+      - {interaction: catalogue.default.svc}
+      - {interaction: ratings.default.svc}
+      - {interaction: cart.default.svc}
+      type: micro.nodes.Service
+    web.default.svc:
+      requirements:
+      - {interaction: web.default}
+      type: micro.nodes.MessageRouter
+  relationship_templates:
+    c:
+      properties: {circuit_breaker: true}
+      type: micro.relationships.InteractsWith
+    cd:
+      properties: {circuit_breaker: true, dynamic_discovery: true}
+      type: micro.relationships.InteractsWith
+    d:
+      properties: {dynamic_discovery: true}
+      type: micro.relationships.InteractsWith
+    t:
+      properties: {timeout: true}
+      type: micro.relationships.InteractsWith
+    tc:
+      properties: {circuit_breaker: true, timeout: true}
+      type: micro.relationships.InteractsWith
+    tcd:
+      properties: {circuit_breaker: true, dynamic_discovery: true, timeout: true}
+      type: micro.relationships.InteractsWith
+    td:
+      properties: {dynamic_discovery: true, timeout: true}
+      type: micro.relationships.InteractsWith
+tosca_definitions_version: micro_tosca_yaml_1.1
