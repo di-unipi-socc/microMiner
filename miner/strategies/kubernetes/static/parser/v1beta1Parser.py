@@ -22,12 +22,13 @@ class V1beta1Parser(K8sParser):
                 info = V1Parser._parsePod(contentStr, jobSpec['template']['metadata'], jobSpec['template']['spec'])
                 if info['name'] == '':
                     info['name'] = contentDict['metadata']['name'] if 'name' in contentDict['metadata'] else contentDict['metadata']['generateName']
-            elif contentDict['kind'] == 'Ingress':
-                info = cls._parseIngress(contentDict['metadata'], contentDict['spec'])
+            #elif contentDict['kind'] == 'Ingress':
+            #    info = cls._parseIngress(contentDict['metadata'], contentDict['spec'])
         except:
             raise WrongFormatError('')
         return info
 
+    '''
     @classmethod
     def _parseIngress(cls, metadata: dict, spec: dict) -> {}:
         ingressInfo = {}
@@ -46,3 +47,4 @@ class V1beta1Parser(K8sParser):
                 services.append({'name': path['backend']['serviceName'] + '.' + namespace + '.svc', 'port': path['backend']['servicePort']})
         ingressInfo['services'] = services
         return {'type': 'ingress', 'info': ingressInfo}
+    '''
