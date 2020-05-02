@@ -51,14 +51,19 @@ class V1Parser(K8sParser):
             podInfo['labels'] = metadata['labels']
         else:
             podInfo['labels'] = {}
+        podInfo['hostNetwork'] = False
+        if 'hostNetwork' in spec:
+            podInfo['hostNetwork'] = spec['hostNetwork']
         podInfo['image'] = spec['containers'][0]['image']
-        for port in spec['containers'][0]['ports']:
-            if 'name' in port:
-                portName = port['name']
-            else:
-                portName = ''
-            ports.append({'name': portName, 'number': port['containerPort']})
-        podInfo['ports'] = ports
+        podInfo['ports'] = []
+        if 'ports' in spec['containers'][0]:
+            for port in spec['containers'][0]['ports']:
+                if 'name' in port:
+                    portName = port['name']
+                else:
+                    portName = ''
+                ports.append({'name': portName, 'number': port['containerPort']})
+            podInfo['ports'] = ports
         return {'type': 'pod', 'namespace': namespace, 'name': name, 'hostname': hostname, 'info': podInfo}
 
     @classmethod
