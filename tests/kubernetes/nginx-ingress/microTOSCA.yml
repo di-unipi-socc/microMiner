@@ -1,0 +1,55 @@
+description: coffe-nginx
+imports:
+- {micro: '"https://di-unipi-socc.github.io/microTOSCA/1.1/microTOSCA.yaml"'}
+topology_template:
+  groups:
+    edge:
+      members: [ingress-nginx-controller-f8d756996-gqmpj.ingress-nginx, ingress-nginx-controller.ingress-nginx.svc]
+      type: micro.groups.Edge
+  node_templates:
+    coffee-svc.default.svc:
+      requirements:
+      - {interaction: coffee.default}
+      type: micro.nodes.MessageRouter
+    coffee.default:
+      requirements: []
+      type: micro.nodes.Service
+    ingress-nginx-controller-f8d756996-gqmpj.ingress-nginx:
+      requirements:
+      - {interaction: coffee.default}
+      - {interaction: tea.default}
+      type: micro.nodes.MessageRouter
+    ingress-nginx-controller.ingress-nginx.svc:
+      requirements:
+      - {interaction: ingress-nginx-controller-f8d756996-gqmpj.ingress-nginx}
+      type: micro.nodes.MessageRouter
+    tea-svc.default.svc:
+      requirements:
+      - {interaction: tea.default}
+      type: micro.nodes.MessageRouter
+    tea.default:
+      requirements: []
+      type: micro.nodes.Service
+  relationship_templates:
+    c:
+      properties: {circuit_breaker: true}
+      type: micro.relationships.InteractsWith
+    cd:
+      properties: {circuit_breaker: true, dynamic_discovery: true}
+      type: micro.relationships.InteractsWith
+    d:
+      properties: {dynamic_discovery: true}
+      type: micro.relationships.InteractsWith
+    t:
+      properties: {timeout: true}
+      type: micro.relationships.InteractsWith
+    tc:
+      properties: {circuit_breaker: true, timeout: true}
+      type: micro.relationships.InteractsWith
+    tcd:
+      properties: {circuit_breaker: true, dynamic_discovery: true, timeout: true}
+      type: micro.relationships.InteractsWith
+    td:
+      properties: {dynamic_discovery: true, timeout: true}
+      type: micro.relationships.InteractsWith
+tosca_definitions_version: micro_tosca_yaml_1.1
