@@ -33,11 +33,13 @@ class K8sParserContext:
             except:
                 raise UnsupportedTypeError('Unsupported apiVersion')
             nodesInfo.append(parser.parse(contentDict, contentStr))
-        elif path.endswith('.yml'):
-            yamlSplitted = self._readFile(path).split('---')
+        elif path.endswith('.yml') or path.endswith('.yaml'):
+            yamlSplitted = re.split('^---\n', self._readFile(path), flags=re.MULTILINE)
             loader = YAML(typ='safe')
             for yaml in yamlSplitted:
                 content = loader.load(yaml)
+                if not content:
+                    continue
                 try:
                     apiVersion = content['apiVersion'].split('/').pop()
                     parser = self._get_class(self.versions[apiVersion])
