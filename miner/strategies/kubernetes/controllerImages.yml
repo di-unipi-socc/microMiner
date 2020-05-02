@@ -1,0 +1,16 @@
+INGRESS-CONTROLLERS:
+  - quay.io/kubernetes-ingress-controller/nginx-ingress-controller
+  - quay.io/datawire/aes
+  - appscode/voyager
+  - docker.io/amazon/aws-alb-ingress-controller
+  - docker.io/projectcontour/contour
+  - quay.io/citrix/citrix-k8s-cpx-ingress
+  - quay.io/citrix/citrix-k8s-ingress-controller
+  - f5networks/k8s-bigip-ctlr
+  - quay.io/jcmoraisjr/haproxy-ingress
+  - kubernetes-registry.haproxy.com/hapee-ingress
+  - haproxytech/kubernetes-ingress
+  - kong-docker-kubernetes-ingress-controller.bintray.io/kong-ingress-controller
+  - kong
+  - registry.opensource.zalan.do/pathfinder/skipper
+  - traefik

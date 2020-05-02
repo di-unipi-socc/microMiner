@@ -1,0 +1,19 @@
+DB:
+  - couchbase
+  - postgres
+  - redis
+  - mysql
+  - mongo
+  - mariadb
+  - memcached
+  - aerospike
+  - influxdb
+  - crate
+  - cassandra
+  - couchdb
+  - adminer
+  - neo4j
+  - rethinkdb
+  - owncloud
+  - arangodb
+  - orientdb
