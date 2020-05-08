@@ -10,12 +10,14 @@ from os.path import isdir, isfile, join, exists
 from kubernetes import client, config, utils
 from kubernetes.client import configuration
 from kubernetes.client.rest import ApiException
+from kubernetes.client.models.v1_container import V1Container
 from kubernetes.stream import stream
 from os import listdir
 from ruamel import yaml
 from ruamel.yaml import YAML
 from pathlib import Path
 from typing import Type
+from pprint import pprint
 import logging
 import copy
 import shutil
@@ -101,8 +103,8 @@ class K8sDynamicMiner(DynamicMiner):
             pods = v1.list_pod_for_all_namespaces(watch = False)
             containerName = ''.join(c for c in cls.config['monitoringContainer'] if c.isalnum())
             for pod in pods.items:
-                if pod.spec.hostname in nodes or pod.status.pod_ip in nodes:
-                    fileName = pod.spec.hostname if pod.spec.hostname else pod.status.pod_ip
+                if pod.spec.hostname in nodes or (pod.metadata.annotations and 'archMinerName' in pod.metadata.annotations and pod.metadata.annotations['archMinerName'] in nodes) and pod.status.phase == 'Running':
+                    fileName = pod.spec.hostname if pod.spec.hostname in nodes else pod.metadata.annotations['archMinerName']
                     filePath = join('/home/dump', fileName + '.json')
                     command = [
                                 './bin/sh',
@@ -131,14 +133,14 @@ class K8sDynamicMiner(DynamicMiner):
                     raise TestError('')
             
             #Wait until monitoring is finished
-            time.sleep(info['time'])
+            time.sleep(info['time']+5)
             print('   Monitoring completed')
 
             #Save on local host the packets
             pods = v1.list_pod_for_all_namespaces(watch = False)
             for pod in pods.items:
-                if pod.spec.hostname in nodes or pod.status.pod_ip in nodes:
-                    fileName = pod.spec.hostname if pod.spec.hostname else pod.status.pod_ip
+                if pod.spec.hostname in nodes or (pod.metadata.annotations and 'archMinerName' in pod.metadata.annotations and pod.metadata.annotations['archMinerName'] in nodes) and pod.status.phase == 'Running':
+                    fileName = pod.spec.hostname if pod.spec.hostname in nodes else pod.metadata.annotations['archMinerName']
                     remoteFilePath = join('home/dump', fileName + '.json')
                     localFilePath = join(cls.config['monitoringFiles'], fileName + '.json')
                     os.system('kubectl cp -c ' + containerName + ' ' + pod.metadata.namespace + '/' + pod.metadata.name + ':' + remoteFilePath + ' ' + localFilePath)
@@ -220,11 +222,23 @@ class K8sDynamicMiner(DynamicMiner):
         if 'svc' in packetSrc.split('.'):
             return False
         if packetSrc != srcNodeName:
-            packetSrc = packetLayers['ip']['ip.src']
+            packetSrc = cls._getPodAnnotation(packetLayers['ip']['ip.src'])
         if packetSrc != srcNodeName:
             return False
         
         return True
+
+    @classmethod 
+    def _getPodAnnotation(cls, ip: str) -> str:
+        v1 = client.CoreV1Api()
+        pods = v1.list_pod_for_all_namespaces(watch = False)
+        for pod in pods.items:
+            if pod.status.pod_ip == ip:
+                if pod.metadata.annotations and 'archMinerName' in pod.metadata.annotations:
+                    return pod.metadata.annotations['archMinerName']
+
+        return ''
+                
 
     @classmethod
     def _getPodHostname(cls, ip: str, host: str) -> str:
@@ -249,7 +263,7 @@ class K8sDynamicMiner(DynamicMiner):
         if not dstNodeName in nodes:
             dstNodeName = cls._getPodHostname(packetLayers['ip']['ip.dst'], dstNodeName)
         if not dstNodeName in nodes:
-            dstNodeName = packetLayers['ip']['ip.dst']
+            dstNodeName = cls._getPodAnnotation(packetLayers['ip']['ip.dst'])
         if not dstNodeName in nodes:
             return ('', None)
 
@@ -311,6 +325,7 @@ class K8sDynamicMiner(DynamicMiner):
     
     @classmethod
     def _cleanEnvironment(cls):
+        print('Cleaning environment')
         files = cls._listFiles(cls.config['modDeploymentFiles'])
         for yamlFile in files:
             os.system('kubectl delete -f ' + yamlFile + ' 1>/dev/null 2>/dev/null')
@@ -319,7 +334,7 @@ class K8sDynamicMiner(DynamicMiner):
         for monitoringFile in files:
             os.remove(monitoringFile)
         for controller in cls.controllers:
-            os.system('kubectl delete pod -n ' + controller.metadata.namespace + ' ' + controller.metadata.name + ' 1>/dev/null 2>/dev/null')
+            os.system('kubectl delete pod -n ' + controller.metadata.namespace + ' ' + controller.metadata.name + ' 1>/dev/null 2>/dev/null &')
     
     @classmethod
     def _searchIngressControllers(cls):
@@ -398,7 +413,9 @@ class K8sDynamicMiner(DynamicMiner):
         if controller.spec.hostname:
             controllerName = controller.spec.hostname
         else:
-            controllerName = controller.status.pod_ip
+            controllerName = hashlib.sha1(controller.spec.to_str().encode('utf-8')).hexdigest()
+            v1 = client.CoreV1Api()
+            v1.patch_namespaced_pod(name=controller.metadata.name, namespace=controller.metadata.namespace, body={'metadata': {'annotations': {'archMinerName': controllerName}}})
         namespace = 'default'
         if controller.metadata.namespace:
             namespace = controller.metadata.namespace
