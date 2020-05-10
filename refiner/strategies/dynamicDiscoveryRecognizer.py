@@ -18,7 +18,7 @@ class DynamicDiscoveryRecognizer(Refiner):
                 continue
             edges = node.getEdges(Direction.OUTGOING)
             for adjacentName in edges.keys():
-                if nodes[adjacentName].getType() is NodeType.MICROTOSCA_NODES_MESSAGE_ROUTER:# or not node.getIsMicroToscaEdge(adjacentName):
+                if nodes[adjacentName].getType() is NodeType.MICROTOSCA_NODES_MESSAGE_ROUTER or not node.getIsMicroToscaEdge(adjacentName):
                     continue
                 communications = node.getCommunications(adjacentName)
                 ipAddress = ''
