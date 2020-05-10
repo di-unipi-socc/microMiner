@@ -19,3 +19,7 @@ setup(
     name = 'topology',
     packages = find_packages(),
 )
+setup(
+    name = 'tests',
+    packages = find_packages(),
+)
