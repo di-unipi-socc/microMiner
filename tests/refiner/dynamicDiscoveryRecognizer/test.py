@@ -113,7 +113,7 @@ def test():
 
     DynamicDiscoveryRecognizer.recognize(topology, {})
 
-    YMLExporter.export(topology, './tests/refiner/DynamicDiscoveryMicroTosca.yml')
+    YMLExporter.export(topology, './tests/refiner/dynamicDiscoveryRecognizer/microTOSCA.yml')
 
 if __name__ == '__main__':
     test()
