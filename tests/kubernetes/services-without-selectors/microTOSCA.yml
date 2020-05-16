@@ -1,0 +1,47 @@
+description: Generic application
+imports:
+- {micro: '"https://di-unipi-socc.github.io/microTOSCA/1.1/microTOSCA.yaml"'}
+topology_template:
+  groups:
+    edge:
+      members: [dummy-svc.default.svc]
+      type: micro.groups.Edge
+  node_templates:
+    192.168.0.110:
+      requirements: []
+      type: micro.nodes.Service
+    192.168.1.83:
+      requirements: []
+      type: micro.nodes.Service
+    192.168.2.66:
+      requirements: []
+      type: micro.nodes.Service
+    dummy-svc.default.svc:
+      requirements:
+      - {interaction: 192.168.1.83}
+      - {interaction: 192.168.2.66}
+      - {interaction: 192.168.0.110}
+      type: micro.nodes.MessageRouter
+  relationship_templates:
+    c:
+      properties: {circuit_breaker: true}
+      type: micro.relationships.InteractsWith
+    cd:
+      properties: {circuit_breaker: true, dynamic_discovery: true}
+      type: micro.relationships.InteractsWith
+    d:
+      properties: {dynamic_discovery: true}
+      type: micro.relationships.InteractsWith
+    t:
+      properties: {timeout: true}
+      type: micro.relationships.InteractsWith
+    tc:
+      properties: {circuit_breaker: true, timeout: true}
+      type: micro.relationships.InteractsWith
+    tcd:
+      properties: {circuit_breaker: true, dynamic_discovery: true, timeout: true}
+      type: micro.relationships.InteractsWith
+    td:
+      properties: {dynamic_discovery: true, timeout: true}
+      type: micro.relationships.InteractsWith
+tosca_definitions_version: micro_tosca_yaml_1.1
