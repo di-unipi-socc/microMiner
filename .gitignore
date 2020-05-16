@@ -2,7 +2,6 @@ __pycache__/
 build
 *.egg-info
 dist
-.coverage
 archMiner.log
 htmlcov
 setup.cfg
