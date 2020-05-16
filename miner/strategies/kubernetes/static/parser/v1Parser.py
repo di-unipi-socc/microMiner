@@ -23,7 +23,7 @@ class V1Parser(K8sParser):
             elif contentDict['kind'] == 'Service':
                 info = cls._parseService(contentDict['metadata'], contentDict['spec'])
             elif contentDict['kind'] == 'Endpoints':
-                info = cls._parseEndpoints(contentDict['metadata'], contentDict['spec'])
+                info = cls._parseEndpoints(contentDict)
         except:
             raise WrongFormatError('')
         return info
@@ -104,7 +104,7 @@ class V1Parser(K8sParser):
         return {'type': 'service', 'hostname': hostname, 'info': svcInfo}
 
     @classmethod
-    def _parseEndpoints(cls, metadata: dict, spec: dict) -> {}:
+    def _parseEndpoints(cls, spec: dict) -> {}:
         endpoints = []
         for subset in spec['subsets']:
             for address in subset['addresses']:
@@ -115,5 +115,5 @@ class V1Parser(K8sParser):
                     else:
                         portName = ''
                     ports.append({'name': portName, 'number': port['port']})
-                endpoints.append({'type': 'endpoint', 'hostname': address['hostname'], 'ip': address['ip'], 'ports': ports})
+                endpoints.append({'type': 'endpoint', 'hostname': address['hostname'] if 'hostname' in address else address['ip'] , 'ip': address['ip'], 'ports': ports})
         return {'type': 'endpoints', 'info': endpoints}
