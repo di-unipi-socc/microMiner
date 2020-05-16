@@ -33,7 +33,7 @@ class MessageBrokerRecognizer(Refiner):
             }
 
     STOMP = {
-                'SEND' : 'client', 'SUBSCRIBE': 'client', 'UNSUBSCRIBE': 'client', 
+                'CONNECT': 'client', 'SEND' : 'client', 'SUBSCRIBE': 'client', 'UNSUBSCRIBE': 'client', 
                 'BEGIN': 'client', 'COMMIT': 'client', 'ABORT': 'client', 
                 'ACK': 'client', 'NACK': 'client', 'DISCONNECT': 'client', 
                 'CONNECTED': 'server', 'MESSAGE': 'server', 'RECEIPT': 'server', 'ERROR': 'server'

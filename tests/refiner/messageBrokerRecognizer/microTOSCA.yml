@@ -1,0 +1,44 @@
+description: Generic application
+imports:
+- {micro: '"https://di-unipi-socc.github.io/microTOSCA/1.1/microTOSCA.yaml"'}
+topology_template:
+  groups: {}
+  node_templates:
+    A:
+      requirements:
+      - {interaction: B}
+      - {interaction: C}
+      - {interaction: D}
+      type: micro.nodes.Service
+    B:
+      requirements: []
+      type: micro.nodes.MessageBroker
+    C:
+      requirements: []
+      type: micro.nodes.MessageBroker
+    D:
+      requirements: []
+      type: micro.nodes.MessageBroker
+  relationship_templates:
+    c:
+      properties: {circuit_breaker: true}
+      type: micro.relationships.InteractsWith
+    cd:
+      properties: {circuit_breaker: true, dynamic_discovery: true}
+      type: micro.relationships.InteractsWith
+    d:
+      properties: {dynamic_discovery: true}
+      type: micro.relationships.InteractsWith
+    t:
+      properties: {timeout: true}
+      type: micro.relationships.InteractsWith
+    tc:
+      properties: {circuit_breaker: true, timeout: true}
+      type: micro.relationships.InteractsWith
+    tcd:
+      properties: {circuit_breaker: true, dynamic_discovery: true, timeout: true}
+      type: micro.relationships.InteractsWith
+    td:
+      properties: {dynamic_discovery: true, timeout: true}
+      type: micro.relationships.InteractsWith
+tosca_definitions_version: micro_tosca_yaml_1.1
