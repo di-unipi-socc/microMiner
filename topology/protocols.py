@@ -97,7 +97,7 @@ class STOMP:
 class HTTP:
     
     def __init__(self, packet: dict):
-        pass
+        self.xForwardedFor = packet['http.x_forwarded_for'].replace(' ', '').split(',')
 
-#    def getHeaders(self) -> dict:
-#        return self.headers
+    def getXForwardedForHeader(self) -> []:
+        return self.xForwardedFor

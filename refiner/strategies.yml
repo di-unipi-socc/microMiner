@@ -3,3 +3,5 @@ message-broker:
     class: 'refiner.strategies.messageBrokerRecognizer.MessageBrokerRecognizer'
 dynamic-discovery:
     class: 'refiner.strategies.dynamicDiscoveryRecognizer.DynamicDiscoveryRecognizer'
+message-router:
+    class: 'refiner.strategies.messageRouterRecognizer.MessageRouterRecognizer'
