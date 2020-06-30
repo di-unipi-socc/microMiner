@@ -12,16 +12,20 @@ class V1Parser(K8sParser):
         workloads = ['Deployment', 'ReplicaSet', 'DaemonSet', 'ReplicationController', 'StatefulSet', 'Job']
         info = {}
         try:
+            #Se si tratta di un controller, estraggo il Pod template
             if contentDict['kind'] in workloads and 'template' in contentDict['spec']:
                 info = cls._parsePod(contentStr, contentDict['spec']['template']['metadata'], contentDict['spec']['template']['spec'])
                 if info['name'] == '':
                     info['name'] = contentDict['metadata']['name'] if 'name' in contentDict['metadata'] else contentDict['metadata']['generateName']
                 if info['namespace'] == 'default' and 'namespace' in contentDict['metadata']:
                     info['namespace'] = contentDict['metadata']['namespace']
+            #Altrimenti estraggo la specifica del Pod
             elif contentDict['kind'] == 'Pod':
                 info = cls._parsePod(contentStr, contentDict['metadata'], contentDict['spec'])
+            #Parsing del service
             elif contentDict['kind'] == 'Service':
                 info = cls._parseService(contentDict['metadata'], contentDict['spec'])
+            #Parsing degli endpoints
             elif contentDict['kind'] == 'Endpoints':
                 info = cls._parseEndpoints(contentDict)
         except:

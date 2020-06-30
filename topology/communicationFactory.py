@@ -8,4 +8,10 @@ class CommunicationFactory(ABC):
 
     @abstractmethod
     def build(self, packet: dict) -> Communication:
+        '''
+        Costruisce un istanza di Communication
+
+        :param packet: dizionario che contiene il pacchetto della rete
+        :return un'istanza di Communication
+        '''
         pass 

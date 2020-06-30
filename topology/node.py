@@ -7,17 +7,26 @@ from .errors import EdgeExistsError, EdgeNotExistsError
 import copy
 
 class Direction(Enum):
+    '''
+    Rappresenta la direzione dell'arco
+    '''
     INCOMING = 0
     OUTGOING = 1
 
 class Node:
 
     def __init__(self, name: str, spec: dict):
+        #Nome del nodo nel microTOSCA
         self.frontendName = name
+        #Dizionario opaco con le specifiche
         self.spec = spec
+        #Tipo microTOSCA del nodo
         self.type = NodeType.MICROTOSCA_NODES_SERVICE
+        #Indica se si tratta di un nodo del gruppo Edge del microTOSCA
         self.isEdge = False
+        #Archi entranti
         self.incomingEdges = {}
+        #Archi uscenti
         self.outgoingEdges = {}
 
     def getFrontendName(self) -> str:

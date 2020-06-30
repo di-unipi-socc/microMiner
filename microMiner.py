@@ -9,7 +9,7 @@ from exporter.ymlExporter import YMLExporter
 @click.group()
 def cli():
     """
-    Archminer generate an architectural model of a microservices application
+    MicroMiner generate an architectural model of a microservices application
     """
 
 @cli.command()
@@ -21,10 +21,13 @@ def cli():
 @click.option('--name', default = 'Generic application', help = 'Name of the microTOSCA model')
 def generate(strategy, source, target, time, test, name):
     nodes = {}
+    #Cerco la strategia di mining richiesta
     strategyConfig = Parser.searchMinerStrategy(strategy)
+    #Eseguo quella statica se presente
     if 'static' in strategyConfig:
         print('Executing static mining...')
         StaticMinerContext.doStaticMining(strategyConfig['static']['class'], source, strategyConfig['static']['args'] if 'args' in strategyConfig['static'] else {}, nodes)
+    #Eseguo quella dinamica se presente
     if 'dynamic' in strategyConfig:
         print('Executing dynamic mining...')
         if 'args' in strategyConfig['dynamic']:
@@ -36,11 +39,13 @@ def generate(strategy, source, target, time, test, name):
             strategyConfig['dynamic']['args'] = {'test': test}
             DynamicMinerContext.doDynamicMining(strategyConfig['dynamic']['class'], source, strategyConfig['dynamic']['args'], nodes)
     
+    #Carico ed eseguo tutte le strategie di refinement
     refinerStrategies = Parser.getRefinerStrategies()
     if refinerStrategies:
         print('Executing Refinement...')
         RefinerContext.doRefinement(refinerStrategies, nodes)
 
+    #Esporto il microTOSCA
     print('Exporting microTOSCA...')
     YMLExporter.export(nodes, target, name)
 

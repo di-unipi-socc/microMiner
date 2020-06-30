@@ -49,12 +49,6 @@ class MessageBrokerRecognizer(Refiner):
     
     @classmethod
     def recognize(cls, nodes: dict, args: dict):
-        
-        # Per ogni nodo della topologia
-        # Itero sulle comunicazioni di un nodo e controllo se c'è uno dei applicationProtocolli che supporto
-        # Se si tratta di AMQP 0.9.1, MQTT, STOMP, allora mi bastano solo gli outgoing edges
-        # Se si tratta di AMQP 1.0.0 mi servono anche gli incoming edges e devo eseguire l'algoritmo
-
         for nodeName, node in nodes.items():
             if node.getType() is NodeType.MICROTOSCA_NODES_SERVICE:
                 edges = node.getEdges(Direction.INCOMING)

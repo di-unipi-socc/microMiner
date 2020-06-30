@@ -18,20 +18,29 @@ class K8sParserContext:
         self.versions = versions
 
     def addVersion(self, version: str, fqnParserClass: str):
+        '''
+        Installa una nuova versione del parser
+
+        :param version: apiVersion di Kubernetes
+        :param fqnParserClass: classe che implementa il parsing della versione dell'API
+        '''
         self.versions[version] = fqnParserClass
 
     def parse(self, path: Path) -> []:
         if not(os.path.exists(path)):
             raise FileNotFoundError
         nodesInfo = []
+        #Verifico se si tratta di JSON O YAML
         if path.endswith('.json'):
             contentStr = self._readFile(path)
             contentDict = json.loads(contentStr)
             try:
+                #Estraggo la versione dell'API e tento di caricare la classe che implementa la strategia concreta
                 apiVersion = contentDict['apiVersion'].split('/').pop()
                 parser = self._getClass(self.versions[apiVersion])
             except:
                 raise UnsupportedTypeError('Unsupported apiVersion')
+            #Chiamo la funzione parse del parser
             nodesInfo.append(parser.parse(contentDict, contentStr))
         elif path.endswith('.yml') or path.endswith('.yaml'):
             yamlSplitted = re.split('^---\n', self._readFile(path), flags=re.MULTILINE)
@@ -41,10 +50,12 @@ class K8sParserContext:
                 if not content:
                     continue
                 try:
+                    #Estraggo la versione dell'API e tento di caricare la classe che implementa la strategia concreta
                     apiVersion = content['apiVersion'].split('/').pop()
                     parser = self._get_class(self.versions[apiVersion])
                 except:
                     raise UnsupportedTypeError('Unsupported apiVersion')
+                #Chiamo la funzione parse del parser
                 nodesInfo.append(parser.parse(content, yaml))
         else:
             raise UnsupportedTypeError('Unsupported file type')

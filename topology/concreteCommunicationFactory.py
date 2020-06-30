@@ -6,6 +6,7 @@ from .errors import NoInfoError
 class ConcreteCommunicationFactory:
 
     def __init__(self):
+        #Carico i protocolli di comunicazione supportati
         loader = YAML(typ='safe')
         protocols = loader.load(Path('topology/protocols.yml'))
         self.networkLayerProtocols = protocols['networkLayer']
@@ -13,10 +14,12 @@ class ConcreteCommunicationFactory:
         self.applicationLayerProtocols = protocols['applicationLayer']
 
     def build(self, packet: dict) -> Communication:
+        #Recupero il protocollo di rete, di trasporto, di applicazione
         networkProtocols = set(packet['_source']['layers'].keys()) & set(self.networkLayerProtocols.keys())
         transportProtocols = set(packet['_source']['layers'].keys()) & set(self.transportLayerProtocols.keys())
         applicationProtocols = set(packet['_source']['layers'].keys()) & set(self.applicationLayerProtocols.keys())
         
+        #Per ogni protocollo, carico la classe e ne creo un'istanza
         netDict, transportDict, appDict = {}, {}, {}
         if len(networkProtocols) == 1:
             networkProtocolName = networkProtocols.pop()
