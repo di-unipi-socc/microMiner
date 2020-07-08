@@ -14,6 +14,7 @@ The figure below illustrates the modular architecture of MicroMiner: the main mo
 ## Requirements
 MicroMiner must be executed in a Kubernetes cluster on a UNIX environment.    
 It's requested Python 3.8 and the sudo privileges.  
+To support all MicroMiner features you need to enable ephemeralContainers on your Kubernetes cluster (https://www.shogan.co.uk/kubernetes/enabling-and-using-ephemeral-containers-on-kubernetes-1-16/).
 
 ## Installation
 Clone this repository.  
