@@ -11,11 +11,11 @@ The figure below illustrates the modular architecture of MicroMiner: the main mo
 
 ![microminer-architecture](https://user-images.githubusercontent.com/44097586/86887621-1f230580-c0f9-11ea-9b42-9ce864346c1d.png)
 
-# Requirements
+## Requirements
 MicroMiner must be executed in a Kubernetes cluster on a UNIX environment.    
 It's requested Python 3.8 and the sudo privileges.  
 
-# Installation
+## Installation
 Clone this repository.  
 Run:  
 ```
@@ -25,8 +25,16 @@ sudo python microMiner generate strategy source target [test] [time] [name]
 ```
 where "strategy" indicates the mining strategy (actually only "Kubernetes"), "source" indicates the path of the folder containing the manifest files, "target" is the path of the microTOSCA file. "Test" is optional and specify the fqn of the module of test. "Time" is also optional (default 60 seconds) and specify how long the application should be monitored. "Name" is the name of the application.
 
-# Demo
+## Demo
 You can try MicroMiner with MiniKube (https://kubernetes.io/docs/tasks/tools/install-minikube/) and with the demo application Online-boutique (https://github.com/GoogleCloudPlatform/microservices-demo):
 ```
 sudo python microMiner generate kubernetes tests/kubernetes/online-boutique/deployment microMiner-DEMO.yaml --time=10
 ```
+
+## Contributing
+Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
+
+Please make sure to update tests as appropriate.
+
+## License
+[MIT](https://choosealicense.com/licenses/mit/)
