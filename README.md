@@ -27,14 +27,14 @@ pip install -r requirements.txt
 ## Usage
 Run:  
 ```
-sudo python microMiner generate strategy source target [test] [time] [name]
+sudo python -m microMiner generate strategy source target [test] [time] [name]
 ```
 where "strategy" indicates the mining strategy (actually only "Kubernetes"), "source" indicates the path of the folder containing the manifest files, "target" is the path of the microTOSCA file. "Test" is optional and specify the fqn of the module of test. "Time" is also optional (default 60 seconds) and specify how long the application should be monitored. "Name" is the name of the application.
 
 ## Demo
 You can try MicroMiner with MiniKube (https://kubernetes.io/docs/tasks/tools/install-minikube/) and with the demo application Online-boutique (https://github.com/GoogleCloudPlatform/microservices-demo):
 ```
-sudo python microMiner generate kubernetes tests/kubernetes/online-boutique/deployment microMiner-DEMO.yaml --time=10
+sudo python -m microMiner generate kubernetes tests/kubernetes/online-boutique/deployment microMiner-DEMO.yaml --time=10
 ```
 
 ## Contributing
