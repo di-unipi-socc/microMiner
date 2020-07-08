@@ -21,7 +21,7 @@ Clone this repository.
 Run:  
 ```
 python setup.py install  
-pip install -r requirements.txt  
+sudo pip install -r requirements.txt  
 ```
 
 ## Usage
