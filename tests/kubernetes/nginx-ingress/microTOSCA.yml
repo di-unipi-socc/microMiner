@@ -1,6 +1,6 @@
 description: coffe-nginx
 imports:
-- {micro: '"https://di-unipi-socc.github.io/microTOSCA/1.1/microTOSCA.yaml"'}
+- {micro: 'https://di-unipi-socc.github.io/microTOSCA/1.1/microTOSCA.yaml'}
 topology_template:
   groups:
     edge:
