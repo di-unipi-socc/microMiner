@@ -9,7 +9,7 @@ topology_template:
   node_templates:
     carts-db.sock-shop:
       requirements: []
-      type: micro.nodes.Datastore
+      type: micro.nodes.DataStore
     carts-db.sock-shop.svc:
       requirements:
       - {interaction: carts-db.sock-shop}
@@ -50,7 +50,7 @@ topology_template:
       type: micro.nodes.MessageRouter
     orders-db.sock-shop:
       requirements: []
-      type: micro.nodes.Datastore
+      type: micro.nodes.DataStore
     orders-db.sock-shop.svc:
       requirements:
       - {interaction: orders-db.sock-shop}
