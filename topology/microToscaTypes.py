@@ -3,7 +3,7 @@ from enum import Enum
 class NodeType(Enum):
     
     MICROTOSCA_NODES_SERVICE = 'micro.nodes.Service'
-    MICROTOSCA_NODES_DATABASE = 'micro.nodes.Datastore'
+    MICROTOSCA_NODES_DATABASE = 'micro.nodes.DataStore'
 
     MICROTOSCA_NODES_MESSAGE_BROKER = 'micro.nodes.MessageBroker'
     MICROTOSCA_NODES_MESSAGE_ROUTER = 'micro.nodes.MessageRouter'
