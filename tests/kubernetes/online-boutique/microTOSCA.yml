@@ -95,7 +95,7 @@ topology_template:
       type: micro.nodes.MessageRouter
     redis-cart.default:
       requirements: []
-      type: micro.nodes.Datastore
+      type: micro.nodes.DataStore
     redis-cart.default.svc:
       requirements:
       - {interaction: redis-cart.default}
