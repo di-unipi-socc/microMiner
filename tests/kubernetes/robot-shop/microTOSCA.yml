@@ -71,7 +71,7 @@ topology_template:
       type: micro.nodes.MessageRouter
     redis.default:
       requirements: []
-      type: micro.nodes.Datastore
+      type: micro.nodes.DataStore
     redis.default.svc:
       requirements:
       - {interaction: redis.default}
