@@ -56,7 +56,7 @@ class YMLExporter(Exporter):
     def _getMetadata(cls, modelName, version="1.1"):
         metadata = dict(tosca_definitions_version=f"micro_tosca_yaml_{version}", 
                           description=modelName,
-                          imports=[{"micro": f'"https://di-unipi-socc.github.io/microTOSCA/{version}/microTOSCA.yaml"'}])
+                          imports=[{"micro": f'https://di-unipi-socc.github.io/microTOSCA/{version}/microTOSCA.yaml'}])
         return metadata
     
     @classmethod
